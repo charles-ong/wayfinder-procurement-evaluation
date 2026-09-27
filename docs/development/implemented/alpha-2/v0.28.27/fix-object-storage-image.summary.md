@@ -91,6 +91,13 @@ locally.
 - `.env.example` and `docs/features.md` were also updated. The dev compose
   container is renamed from `wayfinder-minio` to `wayfinder-storage`; nothing
   referenced the old name.
+- Ported `main`'s `033a3ad` (the welcome-tour half) after this PR's first CI
+  run. `welcome-tour.spec.ts` failed in shard 3 on assertions left at the 5 s
+  default straight after cold-compiled `next dev` navigations — nothing to do
+  with storage; every storage-backed spec passed, as did the compose smoke test
+  on SeaweedFS. `main` had already fixed the modal assertion, so
+  `helpers/timeouts.ts` and the spec are copied from `main` byte for byte, which
+  also keeps the next forward merge conflict-free there.
 
 ## Known limitations
 
