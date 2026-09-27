@@ -30,7 +30,7 @@ Four things, whatever the platform:
 | `web` (Next.js, port 3000) | Container App with external ingress |
 | `api` (Express + workers, port 3001) | Container App with internal ingress |
 | PostgreSQL + pgvector | Azure Database for PostgreSQL Flexible Server 16 |
-| Object storage | MinIO on Container Apps, or an external S3-compatible store — see §4 |
+| Object storage | SeaweedFS on Container Apps, or an external S3-compatible store — see §4 |
 | Container images | Azure Container Registry |
 | Secrets | Azure Key Vault, referenced as Container Apps secrets |
 | TLS + DNS | Container Apps managed certificate, or Azure Front Door |
@@ -50,7 +50,7 @@ the n8n callback webhook (`/v1/webhooks`), if you use it.
 Wayfinder publishes a container image, so there is nothing to build:
 
 ```
-ghcr.io/rbrasier/wayfinder:0.28.21
+ghcr.io/rbrasier/wayfinder:0.28.25
 ```
 
 It is public — no registry credential and no pull secret on the Container App.
@@ -70,8 +70,8 @@ ACR=wayfinderacr
 az group create --name "$RG" --location uksouth
 az acr create --resource-group "$RG" --name "$ACR" --sku Basic
 az acr import --name "$ACR" \
-  --source ghcr.io/rbrasier/wayfinder:0.28.21 \
-  --image wayfinder:0.28.21
+  --source ghcr.io/rbrasier/wayfinder:0.28.25 \
+  --image wayfinder:0.28.25
 ```
 
 `az acr import` copies registry-to-registry — no local Docker, and nothing
@@ -125,8 +125,8 @@ API, and Blob Storage does not expose an S3-compatible endpoint. Pick one of:
 
 | Option | When it fits |
 |---|---|
-| **MinIO as a third Container App**, with an Azure Files volume mount for `/data` | You want everything inside Azure. Give it internal ingress on port 9000, set `MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD` as secrets, and point `MINIO_ENDPOINT` at its internal FQDN with `MINIO_PATH_STYLE=true`. Note that MinIO on a network file share is slower than on a managed disk |
-| **MinIO on an Azure VM with a managed disk** | Better throughput and a simpler durability story than Azure Files, at the cost of a VM to patch |
+| **SeaweedFS as a third Container App**, with an Azure Files volume mount for `/data` | You want everything inside Azure. Use the image and command from `docker-compose.prod.yml`, give it internal ingress on port 9000, set `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` as secrets matching `MINIO_ACCESS_KEY`/`MINIO_SECRET_KEY`, and point `MINIO_ENDPOINT` at its internal FQDN with `MINIO_PATH_STYLE=true`. Note that a network file share is slower than a managed disk |
+| **SeaweedFS on an Azure VM with a managed disk** | Better throughput and a simpler durability story than Azure Files, at the cost of a VM to patch |
 | **An external S3-compatible store** — Amazon S3, Cloudflare R2, Backblaze B2 | Least operational work. Accept the cross-cloud egress and the data-residency implications |
 
 Whichever you choose, the credentials are a static key pair and the settings are
@@ -219,7 +219,7 @@ something several replicas race to do during a rolling update:
 az containerapp job create \
   --name wayfinder-migrate --resource-group "$RG" --environment wayfinder-env \
   --trigger-type Manual --replica-timeout 600 \
-  --image ghcr.io/rbrasier/wayfinder:0.28.21 \
+  --image ghcr.io/rbrasier/wayfinder:0.28.25 \
   --command migrate
 ```
 
@@ -282,8 +282,8 @@ may create the admin.
 - **AKS** is the right answer only if you already run AKS. Container Apps gives
   you the same isolation without the cluster.
 - **A single Azure VM with Docker Compose** — the repo's
-  `docker-compose.prod.yml` brings up web, api, Postgres and MinIO off the same
-  published image. The smallest possible footprint for a pilot, at the cost of
+  `docker-compose.prod.yml` brings up web, api, Postgres and SeaweedFS object
+  storage. The smallest possible footprint for a pilot, at the cost of
   owning patching, backups and TLS.
 
 ---
@@ -302,4 +302,4 @@ may create the admin.
 | Real-time session updates stop arriving | `DATABASE_URL` points at PgBouncer; set `DATABASE_LISTEN_URL` to the direct 5432 endpoint |
 | Web app starts but every query fails | Migrations were never run for this version — run the `migrate` command (see [`upgrading.md`](upgrading.md)) |
 | `Timed out … waiting for another process to finish migrating` | Another migration is running, or one died holding the lock — check for idle database connections |
-| Storage test fails against MinIO | `MINIO_PATH_STYLE` must be `true` for MinIO; `MINIO_REGION` is ignored by it |
+| Storage test fails against SeaweedFS | `MINIO_PATH_STYLE` must be `true` for SeaweedFS |

@@ -4,7 +4,7 @@ Wayfinder keeps a **small** end-to-end suite. Most behaviour is tested far more
 cheaply and far more reliably one layer down, and the architecture in
 `CLAUDE.md` exists precisely so that it can be.
 
-An e2e test is the most expensive test we own: it needs Postgres, Redis, MinIO,
+An e2e test is the most expensive test we own: it needs Postgres, Redis, S3-compatible object storage,
 a built app and a real browser; it runs sharded in CI and nowhere else; and when
 it fails it tells you a page didn't look right, not which unit is wrong.
 Reach for one only when nothing cheaper can see the defect.

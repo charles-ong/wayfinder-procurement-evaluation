@@ -20,8 +20,9 @@ railway init
 In your Railway project, add:
 
 - **PostgreSQL** plugin (provides `DATABASE_URL` automatically)
-- **MinIO plugin** — or have an external S3-compatible store ready (Backblaze B2,
-  AWS S3, etc.). You do not configure it here; you point the setup wizard at it
+- **Object storage** — an external S3-compatible store (Backblaze B2, AWS S3,
+  etc.), or a SeaweedFS service from the image and command in
+  `docker-compose.prod.yml`. You do not configure it here; you point the setup wizard at it
   after the first deploy.
 
 ## 3. Environment variable mapping
@@ -72,7 +73,7 @@ email step.
 - Log in as admin
 - Navigate to **Admin → Flows** — you should see the empty state
 - Upload a test document template via a `generate_document` node
-- Check the MinIO / S3 bucket — the file should appear under `templates/`
+- Check the storage bucket — the file should appear under `templates/`
 - Check the `api` service log for `scheduler heartbeat started`
 
 ---
@@ -86,5 +87,5 @@ own step rather than letting a redeploy race it — see
 ## If you would rather own one VM
 
 `docker-compose.prod.yml` in the repo root brings up web, api, Postgres and
-MinIO off the published image on a single host. It trades Railway's managed
+SeaweedFS object storage on a single host. It trades Railway's managed
 platform for full control of patching, backups and TLS.

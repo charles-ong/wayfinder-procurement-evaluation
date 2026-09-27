@@ -47,7 +47,7 @@ callback webhook (`/v1/webhooks`), which is the one route an outside caller hits
 Wayfinder publishes a container image, so there is nothing to build:
 
 ```
-ghcr.io/rbrasier/wayfinder:0.28.21
+ghcr.io/rbrasier/wayfinder:0.28.25
 ```
 
 It is public — no credential, no `imagePullSecret`. One image contains both
@@ -68,9 +68,9 @@ aws ecr create-repository --repository-name wayfinder --region "$AWS_REGION"
 aws ecr get-login-password --region "$AWS_REGION" \
   | docker login --username AWS --password-stdin "$ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com"
 
-docker pull ghcr.io/rbrasier/wayfinder:0.28.21
-docker tag ghcr.io/rbrasier/wayfinder:0.28.21 "$REPO:0.28.21"
-docker push "$REPO:0.28.21"
+docker pull ghcr.io/rbrasier/wayfinder:0.28.25
+docker tag ghcr.io/rbrasier/wayfinder:0.28.25 "$REPO:0.28.25"
+docker push "$REPO:0.28.25"
 ```
 
 **Air-gapped or egress-restricted?** The published image fetches the local
@@ -187,7 +187,7 @@ env-only install:
 | `MINIO_PORT` | `443` |
 | `MINIO_USE_SSL` | `true` |
 | `MINIO_REGION` | `<region>` — S3 signs with the bucket's region; left blank the client spends a `GetBucketLocation` call per bucket and fails outright without that permission |
-| `MINIO_PATH_STYLE` | `false` — S3 wants virtual-hosted addressing; only MinIO needs `true` |
+| `MINIO_PATH_STYLE` | `false` — S3 wants virtual-hosted addressing; only a self-hosted store such as SeaweedFS needs `true` |
 | `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | The IAM user's key pair |
 | `MINIO_BUCKET` | `wayfinder-documents` |
 
@@ -286,7 +286,7 @@ the `SMTP_*` and `M365_*` variables in [`.env.example`](../../.env.example).
   image per service or a second config path — at which point ECS is simpler.
 - **EC2 with Docker Compose** is the smallest possible footprint: one instance
   running the repo's `docker-compose.prod.yml`, which brings up web, api, Postgres
-  and MinIO off the same published image. Fine for a pilot, but you own patching,
+  and SeaweedFS object storage. Fine for a pilot, but you own patching,
   backups and TLS.
 - **Elastic Beanstalk** on the Node platform works, but the pnpm workspace build
   needs custom `.platform` hooks and you still need Postgres and S3 separately.

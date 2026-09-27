@@ -83,6 +83,7 @@ const contextFor = (
 ): TrpcContext => ({
   container: containerWith(useCases),
   userId: "dana",
+  authSessionId: null,
   isAdmin: true,
   impersonatorId: null,
   impersonationCookie: null,

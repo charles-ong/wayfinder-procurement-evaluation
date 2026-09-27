@@ -25,7 +25,7 @@ jobs:
   # The suite runs sequentially within a machine (shared auth + seed data), so
   # the only safe way to cut wall-clock is to split the specs across several
   # machines. Each shard is a fully independent job with its own Postgres +
-  # MinIO + app, so there is no cross-shard data contention. Playwright reruns
+  # object storage + app, so there is no cross-shard data contention. Playwright reruns
   # the setup/seed/cleanup project dependencies inside every shard.
   #
   # Three shards. Playwright balances a `--shard=i/n` split by test count (not
@@ -71,7 +71,7 @@ jobs:
       MINIO_BUCKET: wayfinder-documents
       MINIO_USE_SSL: "false"
       # Signals to the suite that an object-storage backend is provisioned (the
-      # MinIO step below), so storage-dependent specs run instead of skipping.
+      # SeaweedFS step below), so storage-dependent specs run instead of skipping.
       E2E_OBJECT_STORAGE: "1"
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET || 'e2e-test-secret-must-be-at-least-32-chars-long' }}
       BETTER_AUTH_URL: http://localhost:3000
@@ -143,22 +143,25 @@ jobs:
         run: npm install && npx playwright install --with-deps chromium
         working-directory: apps/web/e2e
 
-      # MinIO can't run as a `services:` container (that syntax can't supply the
-      # required `server /data` command), so start it with `docker run`. The app
-      # auto-creates the bucket on boot via objectStorage.initialise().
-      - name: Start MinIO (object storage)
+      # SeaweedFS can't run as a `services:` container (that syntax can't supply
+      # the `server` command), so start it with `docker run`. Same image and
+      # flags as docker-compose.yml, which explains each one; the credentials
+      # match the MINIO_ACCESS_KEY / MINIO_SECRET_KEY the app is given above. The
+      # app auto-creates the bucket on boot via objectStorage.initialise().
+      - name: Start SeaweedFS (object storage)
         run: |
-          docker run -d --name minio -p 9000:9000 \
-            -e MINIO_ROOT_USER=minioadmin \
-            -e MINIO_ROOT_PASSWORD=minioadmin \
-            quay.io/minio/minio server /data
+          docker run -d --name storage -p 9000:9000 \
+            -e AWS_ACCESS_KEY_ID=minioadmin \
+            -e AWS_SECRET_ACCESS_KEY=minioadmin \
+            chrislusf/seaweedfs:4.47@sha256:ce9e796f1fe6f06968f4c04bdaf8f678dad9c8acdfef3d244133d71bfa6bf882 \
+            server -dir=/data -ip=127.0.0.1 -ip.bind=0.0.0.0 -s3 -s3.port=9000 -master.volumeSizeLimitMB=1024 -volume.max=0 -master.telemetry=false
           for i in $(seq 1 30); do
-            if curl -fsS http://localhost:9000/minio/health/ready >/dev/null 2>&1; then
-              echo "MinIO ready"; exit 0
+            if curl -fsS http://localhost:9000/healthz >/dev/null 2>&1; then
+              echo "SeaweedFS ready"; exit 0
             fi
             sleep 2
           done
-          echo "MinIO did not become ready" >&2; docker logs minio || true; exit 1
+          echo "SeaweedFS did not become ready" >&2; docker logs storage || true; exit 1
 
       # Tee to a file as well as the log: the "Start app" step finishes as soon as
       # the process is backgrounded, so anything the server prints afterwards is
@@ -243,7 +246,7 @@ jobs:
   # rewires how middleware.ts redirects unauthenticated requests (to
   # /api/auth/cert rather than /login), so it cannot be switched on for the main
   # suite without changing every other spec's sign-in path. Deliberately lean —
-  # the `pki` Playwright project skips the seed, so no MinIO and no embedding
+  # the `pki` Playwright project skips the seed, so no object storage and no embedding
   # model are needed here.
   e2e-pki:
     name: Playwright E2E (PKI client certificates)

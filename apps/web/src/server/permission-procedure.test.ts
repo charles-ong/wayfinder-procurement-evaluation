@@ -22,6 +22,7 @@ const containerStub = {
 const contextWith = (overrides: Partial<TrpcContext>): TrpcContext => ({
   container: containerStub,
   userId: "user-1",
+  authSessionId: null,
   isAdmin: false,
   impersonatorId: null,
   impersonationCookie: null,

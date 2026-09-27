@@ -92,6 +92,7 @@ const contextFor = (
 ): TrpcContext => ({
   container: containerFor(calls),
   userId,
+  authSessionId: null,
   isAdmin,
   impersonatorId: null,
   impersonationCookie: null,

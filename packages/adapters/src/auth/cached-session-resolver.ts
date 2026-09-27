@@ -61,6 +61,7 @@ export const createCachedSessionResolver = (
       // cache. Every field of ResolvedSession must appear here — one omitted is
       // one silently erased on every cache hit.
       return {
+        sessionId: cached.sessionId,
         userId: cached.userId,
         isAdmin: cached.isAdmin,
         impersonatorId: cached.impersonatorId,

@@ -43,6 +43,9 @@ export const resolveImpersonation = async (
     if (!target) return selfSession;
 
     return {
+      // The sign-in in force is still the admin's own; simulating someone does
+      // not create a session row for them (ADR-059 §1, ADR-061 §5).
+      sessionId: selfSession.sessionId,
       userId: ticket.targetUserId,
       isAdmin: target.isAdmin,
       impersonatorId: selfSession.userId,

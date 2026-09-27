@@ -54,7 +54,7 @@ the release model.
 ```bash
 git clone --branch release/alpha-2 https://github.com/rbrasier/wayfinder
 cd wayfinder
-docker compose up -d      # Postgres + MinIO (skip if you bring your own)
+docker compose up -d      # Postgres + SeaweedFS object storage (skip if you bring your own)
 ./restart.sh              # generates secrets, migrates, starts the app
 # → open the printed  http://localhost:3000/setup?token=…  link
 # → set the admin email + password, then complete the setup wizard
@@ -81,7 +81,7 @@ defaults point at localhost. [`.env.example`](.env.example) is the full,
 annotated set of overrides.
 
 - Web UI → http://localhost:3000
-- MinIO console → http://localhost:9001 (user: `minioadmin`, pass: `minioadmin`)
+- Object storage (S3 API, no web console) → http://localhost:9000 (key: `minioadmin`, secret: `minioadmin`)
 
 On first run, open the printed setup link, create the administrator account, and
 the **setup wizard** walks you through object storage, an AI provider, a sign-in
@@ -141,7 +141,7 @@ administrator, see
 | Auth | Better Auth (magic-link, passwordless) |
 | AI | Vercel AI SDK — Anthropic / OpenAI / Mistral / AWS Bedrock |
 | Agents | LangGraph.js |
-| Object storage | MinIO (S3-compatible) |
+| Object storage | Any S3-compatible store — SeaweedFS in the bundled compose files |
 | Observability | Langfuse (opt-in) + OpenTelemetry |
 | Tests | Vitest |
 
@@ -154,7 +154,7 @@ Wayfinder follows **hexagonal architecture** (ports and adapters):
 ```
 packages/domain        — pure TypeScript entities + port interfaces. No dependencies.
 packages/application   — use cases. Imports domain only.
-packages/adapters      — Drizzle, MinIO, LangGraph, Vercel AI SDK, Better Auth.
+packages/adapters      — Drizzle, S3 storage (via the `minio` client), LangGraph, Vercel AI SDK, Better Auth.
 apps/web               — Next.js app. Imports application + adapters.
 apps/api               — Express health/webhook API. Imports application + adapters.
 ```
@@ -174,9 +174,9 @@ Key variables:
 | `ADMIN_SEED_EMAIL` | Email auto-promoted to admin on first login |
 | `ANTHROPIC_API_KEY` | Required when `AI_DEFAULT_PROVIDER=anthropic` |
 | `DATABASE_URL` | Postgres connection string |
-| `MINIO_ENDPOINT` | MinIO / S3 hostname |
-| `MINIO_ACCESS_KEY` | MinIO / S3 access key |
-| `MINIO_SECRET_KEY` | MinIO / S3 secret key |
+| `MINIO_ENDPOINT` | Object store (S3 API) hostname |
+| `MINIO_ACCESS_KEY` | Object store access key |
+| `MINIO_SECRET_KEY` | Object store secret key |
 | `BETTER_AUTH_SECRET` | 32-byte random string for session signing |
 
 For production on AWS S3, set `MINIO_ENDPOINT=s3.amazonaws.com` and `MINIO_USE_SSL=true`.
