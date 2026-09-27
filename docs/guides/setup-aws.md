@@ -187,7 +187,7 @@ env-only install:
 | `MINIO_PORT` | `443` |
 | `MINIO_USE_SSL` | `true` |
 | `MINIO_REGION` | `<region>` — S3 signs with the bucket's region; left blank the client spends a `GetBucketLocation` call per bucket and fails outright without that permission |
-| `MINIO_PATH_STYLE` | `false` — S3 wants virtual-hosted addressing; only MinIO needs `true` |
+| `MINIO_PATH_STYLE` | `false` — S3 wants virtual-hosted addressing; only a self-hosted store such as SeaweedFS needs `true` |
 | `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | The IAM user's key pair |
 | `MINIO_BUCKET` | `wayfinder-documents` |
 
@@ -280,7 +280,7 @@ the `SMTP_*` and `M365_*` variables in [`.env.example`](../../.env.example).
   image per service or a second config path — at which point ECS is simpler.
 - **EC2 with Docker Compose** is the smallest possible footprint: one instance
   running the repo's `docker-compose.prod.yml`, which brings up web, api, Postgres
-  and MinIO off the same published image. Fine for a pilot, but you own patching,
+  and SeaweedFS object storage. Fine for a pilot, but you own patching,
   backups and TLS.
 - **Elastic Beanstalk** on the Node platform works, but the pnpm workspace build
   needs custom `.platform` hooks and you still need Postgres and S3 separately.

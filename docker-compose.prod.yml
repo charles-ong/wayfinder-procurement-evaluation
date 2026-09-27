@@ -48,19 +48,23 @@ services:
       timeout: 5s
       retries: 20
 
+  # SeaweedFS, not MinIO: MinIO's images are no longer served. The flags are the
+  # same as docker-compose.yml, which explains each one. Nothing is published —
+  # only the app services reach it, on the compose network.
+  #
+  # Upgrading from a MinIO-based release: SeaweedFS cannot read MinIO's data.
+  # Migrate the objects before relying on this — docs/guides/upgrading.md.
   storage:
-    image: quay.io/minio/minio:latest
+    image: chrislusf/seaweedfs:4.47@sha256:ce9e796f1fe6f06968f4c04bdaf8f678dad9c8acdfef3d244133d71bfa6bf882
     restart: unless-stopped
-    command: server /data --console-address ":9001"
+    command: server -dir=/data -ip=127.0.0.1 -ip.bind=0.0.0.0 -s3 -s3.port=9000 -master.volumeSizeLimitMB=1024 -volume.max=0 -master.telemetry=false
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+      AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
     volumes:
-      - minio-data:/data
+      - seaweedfs-data:/data
     healthcheck:
-      # Matches docker-compose.yml: `mc` is not guaranteed to be present in the
-      # server image, but curl and the health endpoint are.
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/healthz"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -112,6 +116,8 @@ services:
       # The scheduler heartbeat POSTs the web app's internal tick endpoint.
       WEB_BASE_URL: http://web:3000
 
+# minio-data is deliberately no longer declared, so `docker compose down -v`
+# cannot delete a MinIO volume that has not been migrated yet.
 volumes:
   postgres-data:
-  minio-data:
+  seaweedfs-data:
