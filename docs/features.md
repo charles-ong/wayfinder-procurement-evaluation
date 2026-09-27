@@ -64,7 +64,7 @@ _Why it matters:_ The user usually holds the document the step actually turns on
 Most Wayfinder processes exist to produce a document. Everything here is about that document being complete, correctly typed, and trustworthy.
 
 ### DOCX Document Generation
-Flow steps configured with output type `generate_document` automatically fill a Word document template with information gathered during the conversation. The filled document is stored in object storage (MinIO or S3) and presented to the user as a downloadable card in the chat.
+Flow steps configured with output type `generate_document` automatically fill a Word document template with information gathered during the conversation. The filled document is stored in object storage (any S3-compatible store) and presented to the user as a downloadable card in the chat.
 
 _Why it matters:_ The deliverable is the point. Generating it directly from the conversation removes the manual re-keying step between "we discussed it" and "it's written down" — the step where errors and delays actually accumulate.
 
