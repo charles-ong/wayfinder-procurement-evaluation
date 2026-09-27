@@ -21,6 +21,7 @@ const containerWith = (duplicateFlow: { execute: ReturnType<typeof vi.fn> }): Co
 const contextFor = (container: Container, overrides: Partial<TrpcContext> = {}): TrpcContext => ({
   container,
   userId: "user-1",
+  authSessionId: null,
   isAdmin: false,
   impersonatorId: null,
   impersonationCookie: null,

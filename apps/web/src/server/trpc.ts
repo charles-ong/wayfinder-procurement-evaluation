@@ -12,6 +12,8 @@ import { causeToMetadata } from "./error-metadata";
 export interface TrpcContext {
   readonly container: Container;
   readonly userId: string | null;
+  // core_sessions.id of the current sign-in, never the token (ADR-061 §5).
+  readonly authSessionId: string | null;
   readonly isAdmin: boolean;
   // The admin behind a simulated session (ADR-059). Attribution only — no
   // procedure may gate on it; `isAdmin` above already reflects the principal
@@ -40,6 +42,7 @@ export const createTrpcContext = async (req: Request): Promise<TrpcContext> => {
   const container = getContainer();
 
   let userId: string | null = null;
+  let authSessionId: string | null = null;
   let isAdmin = false;
   let impersonatorId: string | null = null;
 
@@ -50,6 +53,7 @@ export const createTrpcContext = async (req: Request): Promise<TrpcContext> => {
     const session = await container.resolveSession(token, impersonationCookie);
     if (session) {
       userId = session.userId;
+      authSessionId = session.sessionId;
       isAdmin = session.isAdmin;
       impersonatorId = session.impersonatorId;
     }
@@ -60,6 +64,7 @@ export const createTrpcContext = async (req: Request): Promise<TrpcContext> => {
   return {
     container,
     userId,
+    authSessionId,
     isAdmin,
     impersonatorId,
     impersonationCookie,

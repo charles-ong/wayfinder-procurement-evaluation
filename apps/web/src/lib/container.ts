@@ -116,6 +116,7 @@ import { buildApprovalNotifiers } from "./container-approval-notifiers";
 import { buildFlowTestUseCases } from "./container-flow-test-use-cases";
 import { buildApprovalUseCases } from "./container-approval-use-cases";
 import { buildDocumentUseCases } from "./container-document-use-cases";
+import { buildPresentationUseCases } from "./container-presentation";
 import { buildOnboarding } from "./container-onboarding";
 import {
   DocxGenerator,
@@ -772,6 +773,7 @@ const build = () => {
       ...peopleUseCases,
       ...lookupSources.useCases,
       ...skillsAndMcp.useCases,
+      ...buildPresentationUseCases({ systemSettings, objectStorage, auditLogger, auditQuery, loadLoginNotice: () => runtimeConfig.getLoginNoticeConfig() }),
     },
   };
 };

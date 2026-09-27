@@ -47,6 +47,7 @@ const makeContainer = (): Container =>
 const contextWith = (container: Container): TrpcContext => ({
   container,
   userId: "user-1",
+  authSessionId: null,
   isAdmin: false,
   impersonatorId: null,
   impersonationCookie: null,

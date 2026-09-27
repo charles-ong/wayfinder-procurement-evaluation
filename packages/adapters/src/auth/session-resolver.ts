@@ -9,6 +9,9 @@ import type { Database } from "../db/client";
 import { core_sessions, core_users } from "../db/schema/core";
 
 export interface ResolvedSession {
+  // core_sessions.id: identifies one sign-in without exposing the token, which
+  // is a bearer secret (ADR-061 §5).
+  readonly sessionId: string;
   readonly userId: string;
   readonly isAdmin: boolean;
   // The admin actually driving, when this principal is a simulated view of
@@ -62,9 +65,9 @@ export const resolveSession = async (
   try {
     const [row] = await db
       .select({
+        sessionId: core_sessions.id,
         userId: core_sessions.user_id,
         isAdmin: core_users.is_admin,
-        sessionId: core_sessions.id,
         createdAt: core_sessions.created_at,
         lastActiveAt: core_sessions.last_active_at,
       })
@@ -82,7 +85,12 @@ export const resolveSession = async (
       await stampLastActive(db, row.sessionId, now);
     }
 
-    return { userId: row.userId, isAdmin: row.isAdmin, impersonatorId: null };
+    return {
+      sessionId: row.sessionId,
+      userId: row.userId,
+      isAdmin: row.isAdmin,
+      impersonatorId: null,
+    };
   } catch {
     return null;
   }

@@ -13,6 +13,7 @@ export const createServerTrpcContext = async (): Promise<TrpcContext> => {
   const container = getContainer();
 
   let userId: string | null = null;
+  let authSessionId: string | null = null;
   let isAdmin = false;
   let impersonatorId: string | null = null;
 
@@ -20,6 +21,7 @@ export const createServerTrpcContext = async (): Promise<TrpcContext> => {
     const session = await container.resolveSession(token, impersonationCookie);
     if (session) {
       userId = session.userId;
+      authSessionId = session.sessionId;
       isAdmin = session.isAdmin;
       impersonatorId = session.impersonatorId;
     }
@@ -30,6 +32,7 @@ export const createServerTrpcContext = async (): Promise<TrpcContext> => {
   return {
     container,
     userId,
+    authSessionId,
     isAdmin,
     impersonatorId,
     impersonationCookie,

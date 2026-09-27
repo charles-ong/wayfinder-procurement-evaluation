@@ -25,13 +25,13 @@ const buildResolver = (
 
 describe("createCachedSessionResolver", () => {
   it("returns the resolved session and stores it for subsequent reads", async () => {
-    const { loader, resolve } = buildResolver({ userId: "user-1", isAdmin: true, impersonatorId: null });
+    const { loader, resolve } = buildResolver({ sessionId: "session-user-1", userId: "user-1", isAdmin: true, impersonatorId: null });
 
     const first = await resolve("token-abc.signature", null);
     const second = await resolve("token-abc.signature", null);
 
-    expect(first).toEqual({ userId: "user-1", isAdmin: true, impersonatorId: null });
-    expect(second).toEqual({ userId: "user-1", isAdmin: true, impersonatorId: null });
+    expect(first).toEqual({ sessionId: "session-user-1", userId: "user-1", isAdmin: true, impersonatorId: null });
+    expect(second).toEqual({ sessionId: "session-user-1", userId: "user-1", isAdmin: true, impersonatorId: null });
     // The second call is served from cache, sparing a DB round-trip on the hot path.
     expect(loader).toHaveBeenCalledOnce();
   });
@@ -50,7 +50,7 @@ describe("createCachedSessionResolver", () => {
 
   it("re-queries the database when the cache is disabled with a zero TTL", async () => {
     const { loader, resolve } = buildResolver(
-      { userId: "user-1", isAdmin: false, impersonatorId: null },
+      { sessionId: "session-user-1", userId: "user-1", isAdmin: false, impersonatorId: null },
       { ttlMs: 0, maxEntries: 10 },
     );
 
@@ -77,6 +77,7 @@ describe("createCachedSessionResolver — revocation", () => {
 
   it("stops serving a cached principal once that user is revoked", async () => {
     const { loader, resolve, registry } = buildRevocableResolver({
+      sessionId: "session-user-1",
       userId: "user-1",
       isAdmin: false,
       impersonatorId: null,
@@ -94,6 +95,7 @@ describe("createCachedSessionResolver — revocation", () => {
 
   it("keeps serving other users from cache while one user is revoked", async () => {
     const { loader, resolve, registry } = buildRevocableResolver({
+      sessionId: "session-user-2",
       userId: "user-2",
       isAdmin: false,
       impersonatorId: null,
@@ -103,12 +105,13 @@ describe("createCachedSessionResolver — revocation", () => {
     registry.revoke("user-1");
     const other = await resolve("token-other", null);
 
-    expect(other).toEqual({ userId: "user-2", isAdmin: false, impersonatorId: null });
+    expect(other).toEqual({ sessionId: "session-user-2", userId: "user-2", isAdmin: false, impersonatorId: null });
     expect(loader).toHaveBeenCalledOnce();
   });
 
   it("caches a fresh sign-in that happens after a revocation", async () => {
     const { loader, resolve, registry } = buildRevocableResolver({
+      sessionId: "session-user-1",
       userId: "user-1",
       isAdmin: false,
       impersonatorId: null,
@@ -120,8 +123,8 @@ describe("createCachedSessionResolver — revocation", () => {
 
     // Revocation ends the sessions that existed, not the user's ability to sign
     // back in and be cached again.
-    expect(first).toEqual({ userId: "user-1", isAdmin: false, impersonatorId: null });
-    expect(second).toEqual({ userId: "user-1", isAdmin: false, impersonatorId: null });
+    expect(first).toEqual({ sessionId: "session-user-1", userId: "user-1", isAdmin: false, impersonatorId: null });
+    expect(second).toEqual({ sessionId: "session-user-1", userId: "user-1", isAdmin: false, impersonatorId: null });
     expect(loader).toHaveBeenCalledOnce();
   });
 });
@@ -129,6 +132,8 @@ describe("createCachedSessionResolver — revocation", () => {
 describe("createCachedSessionResolver — impersonation", () => {
   const ADMIN = "admin-1";
   const TARGET = "target-1";
+  // Simulating someone reuses the admin's own sign-in row (ADR-061 §5).
+  const SIGN_IN = "session-admin-1";
 
   // The loader answers according to whether an impersonation cookie was passed,
   // which is what lets these tests prove the key distinguishes the two.
@@ -136,8 +141,8 @@ describe("createCachedSessionResolver — impersonation", () => {
     const loader = vi.fn(
       async (_db: Database, _cookieValue: string, impersonationCookie: string | null) =>
         impersonationCookie
-          ? { userId: TARGET, isAdmin: false, impersonatorId: ADMIN }
-          : { userId: ADMIN, isAdmin: true, impersonatorId: null },
+          ? { sessionId: SIGN_IN, userId: TARGET, isAdmin: false, impersonatorId: ADMIN }
+          : { sessionId: SIGN_IN, userId: ADMIN, isAdmin: true, impersonatorId: null },
     );
     const cache = new TtlCache<CachedPrincipal>({ ttlMs: 60_000, maxEntries: 10 });
     const registry = createSessionRevocationRegistry();
@@ -151,8 +156,8 @@ describe("createCachedSessionResolver — impersonation", () => {
     const first = await resolve("token-abc", "ticket-xyz");
     const second = await resolve("token-abc", "ticket-xyz");
 
-    expect(first).toEqual({ userId: TARGET, isAdmin: false, impersonatorId: ADMIN });
-    expect(second).toEqual({ userId: TARGET, isAdmin: false, impersonatorId: ADMIN });
+    expect(first).toEqual({ sessionId: SIGN_IN, userId: TARGET, isAdmin: false, impersonatorId: ADMIN });
+    expect(second).toEqual({ sessionId: SIGN_IN, userId: TARGET, isAdmin: false, impersonatorId: ADMIN });
     expect(loader).toHaveBeenCalledOnce();
   });
 
@@ -162,7 +167,7 @@ describe("createCachedSessionResolver — impersonation", () => {
     await resolve("token-abc", "ticket-xyz");
     const asThemselves = await resolve("token-abc", null);
 
-    expect(asThemselves).toEqual({ userId: ADMIN, isAdmin: true, impersonatorId: null });
+    expect(asThemselves).toEqual({ sessionId: SIGN_IN, userId: ADMIN, isAdmin: true, impersonatorId: null });
   });
 
   it("does not serve a non-simulated principal to a simulated request on the same token", async () => {
@@ -171,7 +176,7 @@ describe("createCachedSessionResolver — impersonation", () => {
     await resolve("token-abc", null);
     const simulating = await resolve("token-abc", "ticket-xyz");
 
-    expect(simulating).toEqual({ userId: TARGET, isAdmin: false, impersonatorId: ADMIN });
+    expect(simulating).toEqual({ sessionId: SIGN_IN, userId: TARGET, isAdmin: false, impersonatorId: ADMIN });
   });
 
   it("gives two different tickets on one token their own cache entries", async () => {
