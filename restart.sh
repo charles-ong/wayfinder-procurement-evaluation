@@ -165,25 +165,25 @@ if [ "$DBSETUP" = "docker" ] && [ -f docker-compose.yml ]; then
     sleep 1
   done
 
-  # ── wait for MinIO ────────────────────────────────────────────────────────
+  # ── wait for object storage ───────────────────────────────────────────────
   MINIO_EP="${MINIO_ENDPOINT:-}"
   MINIO_P="${MINIO_PORT:-}"
   if [ -n "$MINIO_EP" ] && [ -n "$MINIO_P" ]; then
-    echo "→ waiting for MinIO at $MINIO_EP:$MINIO_P"
+    echo "→ waiting for object storage at $MINIO_EP:$MINIO_P"
     for i in $(seq 1 15); do
       if node -e "
         const http = require('http');
-        const req = http.get('http://${MINIO_EP}:${MINIO_P}/minio/health/live', (res) => {
+        const req = http.get('http://${MINIO_EP}:${MINIO_P}/healthz', (res) => {
           process.exit(res.statusCode === 200 ? 0 : 1);
         });
         req.on('error', () => process.exit(1));
         req.setTimeout(2000, () => { req.destroy(); process.exit(1); });
       " 2>/dev/null; then
-        echo "  MinIO is ready"
+        echo "  object storage is ready"
         break
       fi
       if [ "$i" -eq 15 ]; then
-        echo "  MinIO not reachable at $MINIO_EP:$MINIO_P — is it running?"
+        echo "  object storage not reachable at $MINIO_EP:$MINIO_P — is it running?"
         exit 1
       fi
       sleep 2

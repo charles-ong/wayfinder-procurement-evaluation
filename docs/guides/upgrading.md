@@ -19,6 +19,14 @@ reverse.
 Migrations are safe to run repeatedly, safe to run concurrently, and a no-op
 against an already-current database.
 
+> **Upgrading to 0.28.27 or later from an earlier release?** Object storage
+> moved from MinIO to SeaweedFS, which cannot read MinIO's data. If you run the
+> bundled storage (rather than Amazon S3 or another external store), copy your
+> documents across first — see
+> [Moving object storage from MinIO to SeaweedFS](#moving-object-storage-from-minio-to-seaweedfs).
+> Skip it and uploaded and generated documents will appear to be missing until
+> you do; nothing is deleted.
+
 ---
 
 ## How migrations are applied
@@ -150,6 +158,107 @@ follows the database-restore path exactly as the container guides do.
 
 ---
 
+## Moving object storage from MinIO to SeaweedFS
+
+**Who needs this:** anyone upgrading to 0.28.27 or later from an earlier release
+whose documents live in the bundled object storage. If `MINIO_ENDPOINT` points at
+Amazon S3, Backblaze B2, Cloudflare R2 or another external store, there is
+nothing to move.
+
+**Why:** MinIO archived its community edition and its images can no longer be
+pulled, so from 0.28.27 the bundled storage is SeaweedFS. SeaweedFS cannot read
+MinIO's on-disk format, so the objects have to be copied across once. Your old
+data is not touched by the upgrade: the new release stores into a new
+`seaweedfs-data` volume and no longer declares `minio-data`, so even
+`docker compose down -v` leaves it alone.
+
+**Before you start**, check the MinIO image is still on the host — it is needed
+to read the old data and can no longer be downloaded:
+
+```bash
+docker image ls quay.io/minio/minio
+```
+
+If it has been pruned, do not delete the `minio-data` volume. Only a MinIO server
+can read it, and MinIO's source is still public, so an image can be built from
+it.
+
+### Docker Compose
+
+```bash
+# 0. Back up the database, as for every upgrade (see "Docker Compose" above).
+
+# 1. Stop the app so nothing writes to storage during the copy.
+docker compose -f docker-compose.prod.yml stop web api
+
+# 2. Take the new docker-compose.prod.yml (0.28.27 or later) and start only the
+#    new storage. This replaces the MinIO container; its volume is untouched.
+docker compose -f docker-compose.prod.yml up -d storage
+
+# 3. Find the names Compose gave the old volume and the network.
+docker volume ls --format '{{.Name}}' | grep minio-data    # e.g. wayfinder_minio-data
+docker network ls --format '{{.Name}}' | grep _default     # e.g. wayfinder_default
+MINIO_VOLUME=wayfinder_minio-data
+NETWORK=wayfinder_default
+
+#    Both stores take their credentials from MINIO_ACCESS_KEY / MINIO_SECRET_KEY,
+#    so read back exactly what Compose resolved for the new one.
+MINIO_ACCESS_KEY=$(docker compose -f docker-compose.prod.yml exec -T storage printenv AWS_ACCESS_KEY_ID)
+MINIO_SECRET_KEY=$(docker compose -f docker-compose.prod.yml exec -T storage printenv AWS_SECRET_ACCESS_KEY)
+MINIO_BUCKET=$(sed -n 's/^MINIO_BUCKET=//p' .env | tr -d "\"'")
+: "${MINIO_BUCKET:=wayfinder-documents}"
+
+# 4. Serve the old data from a temporary MinIO on the same network.
+docker run -d --name minio-old --network "$NETWORK" -v "$MINIO_VOLUME":/data \
+  -e MINIO_ROOT_USER="$MINIO_ACCESS_KEY" -e MINIO_ROOT_PASSWORD="$MINIO_SECRET_KEY" \
+  quay.io/minio/minio:latest server /data
+
+# 5. Copy everything across with rclone, then prove every byte arrived.
+rc() {
+  docker run --rm --network "$NETWORK" \
+    -e RCLONE_CONFIG_OLD_TYPE=s3 -e RCLONE_CONFIG_OLD_PROVIDER=Minio \
+    -e RCLONE_CONFIG_OLD_ENDPOINT=http://minio-old:9000 \
+    -e RCLONE_CONFIG_OLD_ACCESS_KEY_ID="$MINIO_ACCESS_KEY" \
+    -e RCLONE_CONFIG_OLD_SECRET_ACCESS_KEY="$MINIO_SECRET_KEY" \
+    -e RCLONE_CONFIG_NEW_TYPE=s3 -e RCLONE_CONFIG_NEW_PROVIDER=SeaweedFS \
+    -e RCLONE_CONFIG_NEW_ENDPOINT=http://storage:9000 \
+    -e RCLONE_CONFIG_NEW_ACCESS_KEY_ID="$MINIO_ACCESS_KEY" \
+    -e RCLONE_CONFIG_NEW_SECRET_ACCESS_KEY="$MINIO_SECRET_KEY" \
+    rclone/rclone:1.75.1 "$@"
+}
+rc copy "old:$MINIO_BUCKET" "new:$MINIO_BUCKET"
+rc check "old:$MINIO_BUCKET" "new:$MINIO_BUCKET" --one-way --download
+
+# 6. Once check reports "0 differences found", retire the temporary MinIO and
+#    bring the whole stack up.
+docker rm -f minio-old
+docker compose -f docker-compose.prod.yml up -d
+```
+
+`copy` never deletes anything, so it is safe to re-run if it is interrupted.
+`--download` makes `check` compare file contents rather than checksums: large
+uploads are stored in parts, and their checksums cannot be compared across two
+different servers.
+
+When you are satisfied everything is there, the old volume can go:
+
+```bash
+docker volume rm "$MINIO_VOLUME"
+```
+
+### AWS ECS and Azure Container Apps
+
+The same idea, against endpoints rather than a Compose network. While your
+existing MinIO is still running, stand up SeaweedFS from the image and command
+in `docker-compose.prod.yml`. Then run the `rc copy` and `rc check` above with
+`OLD_ENDPOINT` and `NEW_ENDPOINT` pointing at the two stores. Finally, point
+`MINIO_ENDPOINT` at SeaweedFS and roll `web` and `api` together.
+
+Copy before anything restarts the MinIO task or app. Its image cannot be
+re-pulled unless you have mirrored it into your own registry (ECR or ACR).
+
+---
+
 ## Rolling back
 
 Migrations are **forward-only**. There are no down-migrations, so a rollback has
@@ -191,3 +300,5 @@ This is why step 1 is a backup, every time.
 | `type "vector" does not exist` | The Postgres instance has no pgvector. On RDS and Flexible Server it must be allow-listed before migrations can create it |
 | Web app starts but every query fails | Migrations were never run for this version. Run the `migrate` command |
 | `Scheduler enabled but not started` in the api log | `SCHEDULER_TICK_SECRET` is unset, or differs between `web` and `api` |
+| Documents missing after upgrading to 0.28.27 or later | Object storage moved to SeaweedFS and the MinIO data was not copied across. Nothing is lost — follow [Moving object storage from MinIO to SeaweedFS](#moving-object-storage-from-minio-to-seaweedfs) |
+| `unauthorized` pulling `quay.io/minio/minio` | MinIO's images are no longer served. Upgrade to 0.28.27 or later, which uses SeaweedFS |

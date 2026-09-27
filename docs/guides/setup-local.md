@@ -7,7 +7,7 @@ This guide walks you through running Wayfinder on your local machine without Doc
 - Node.js 20+
 - pnpm 9+
 - PostgreSQL 16 with pgvector extension (local or cloud)
-- MinIO — local binary, or a cloud-hosted S3-compatible store (MinIO Cloud, Backblaze B2, AWS S3)
+- Object storage — SeaweedFS (via `docker compose` or a local binary), or a cloud-hosted S3-compatible store (Backblaze B2, AWS S3)
 
 ---
 
@@ -61,11 +61,11 @@ first and falls back to these. Common ones:
 | `ADMIN_SEED_EMAIL` | Optional — pre-fills and binds the admin email on `/setup` |
 | `AI_DEFAULT_PROVIDER` | `anthropic` (or `openai`, `mistral`) |
 | `ANTHROPIC_API_KEY` | Your API key |
-| `MINIO_ENDPOINT` | Hostname of your MinIO / S3 instance |
-| `MINIO_PORT` | `9000` for MinIO, `443` for S3 |
+| `MINIO_ENDPOINT` | Hostname of your object store (S3 API) |
+| `MINIO_PORT` | `9000` for local SeaweedFS, `443` for S3 |
 | `MINIO_ACCESS_KEY` | Your access key |
 | `MINIO_SECRET_KEY` | Your secret key |
-| `MINIO_USE_SSL` | `false` for local MinIO, `true` for S3 |
+| `MINIO_USE_SSL` | `false` for local SeaweedFS, `true` for S3 |
 
 ## 3. Create the database
 
@@ -82,13 +82,26 @@ by the first migration.
 pnpm db:migrate
 ```
 
-## 5. Start MinIO locally (if not using a cloud store)
+## 5. Start object storage locally (if not using a cloud store)
 
-Download MinIO from https://min.io/download and run:
+The simplest route is the bundled compose service:
 
 ```bash
-minio server ./minio-data --console-address :9001
+docker compose up -d storage
 ```
+
+Or run SeaweedFS natively: download the `weed` binary for your platform from
+https://github.com/seaweedfs/seaweedfs/releases and run it with the same
+credentials your `.env` gives the app:
+
+```bash
+AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin \
+  weed server -dir=./seaweedfs-data -ip=127.0.0.1 -s3 -s3.port=9000 \
+  -master.volumeSizeLimitMB=1024 -volume.max=0 -master.telemetry=false
+```
+
+`docker-compose.yml` explains each flag. The `MINIO_*` variable names are the
+app's S3-client settings and apply to any S3-compatible store.
 
 The `wayfinder-documents` bucket is created automatically by the app on first start.
 
@@ -117,14 +130,14 @@ You are automatically promoted to admin.
 |---|---|
 | `DATABASE_URL is required` | Ensure `.env` exists and `DATABASE_URL` is set |
 | `ECONNREFUSED 5432` | Postgres is not running — start it or check the host/port |
-| `NoSuchBucket` error | MinIO is running but the bucket does not exist — the app creates it on start; check `MINIO_ENDPOINT`/`MINIO_PORT` |
+| `NoSuchBucket` error | Object storage is running but the bucket does not exist — the app creates it on start; check `MINIO_ENDPOINT`/`MINIO_PORT` |
 
 ---
 
 ## Not for local development: `docker-compose.prod.yml`
 
 The repo has a second compose file. `docker-compose.yml` — the one this guide
-uses — runs **infrastructure only** (Postgres, MinIO, Langfuse) so the app can
+uses — runs **infrastructure only** (Postgres, SeaweedFS, Langfuse) so the app can
 run on your host with hot reload, and `./restart.sh` depends on it.
 
 `docker-compose.prod.yml` is a **deployment** artifact: it runs the app itself
