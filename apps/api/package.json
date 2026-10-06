@@ -10,6 +10,7 @@
     "start": "node dist/index.js",
     "migrate": "node dist/cli/migrate.js",
     "recover-admin": "DOTENV_CONFIG_PATH=../../.env tsx src/cli/recover-admin.ts",
+    "review-requirements": "DOTENV_CONFIG_PATH=../../.env tsx src/cli/review-requirements.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint src",
     "test": "vitest run --passWithNoTests"

@@ -33,11 +33,18 @@ a procurement officer review report.
   `review-format.ts`, `requirement-review-schema.test.ts` (keeps the shared
   schema's value lists in step with the domain), `__fixtures__/sample-sor.ts`.
 
+**`apps/api/src/cli`**
+- `review-requirements.ts` — `pnpm --filter @wayfinder/api review-requirements`,
+  a trial command that reviews local .docx/.pdf/.txt/.md files with the
+  deployment's model (or the environment's provider key) and writes the report.
+- `review-requirements-arguments.ts` (+ test) — argument parsing.
+
 ## Files modified
 
 - `packages/domain/src/entities/index.ts`, `packages/shared/src/schemas/index.ts`,
   `packages/application/src/use-cases/index.ts` — exports.
 - `VERSION`, `package.json` — 0.38.0.
+- `apps/api/package.json` — the `review-requirements` script.
 
 ## Migrations
 
@@ -51,7 +58,7 @@ the domain and application layers.
 
 ## Known limitations
 
-- Not wired into either app; there is no route, page or container entry yet.
+- No route or page yet; the only way to run a review is the CLI trial command.
 - One extraction call per document: very long documents may exceed the model's
   output budget.
 - The default framework values (basic ceiling $80,000, complex floor
