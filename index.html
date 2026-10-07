@@ -4,608 +4,93 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Requirement Quality Review</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<meta name="description" content="A free tool for Australian Government buyers that reviews RFQs, RFTs and Statements of Requirements for clarity, duplication, proportionality and SME access.">
 <style>
-/* Layout: a working form rail on the left, the review report on the right; stacks to one column on phones. */
-:root {
-  --bg: #f3f5f4;
-  --surface: #ffffff;
-  --ink: #17221f;
-  --muted: #5a6964;
-  --line: #d5dcd9;
-  --accent: #1f5f6b;
-  --accent-ink: #ffffff;
-  --high: #b3261e;
-  --high-bg: #fbe9e7;
-  --medium: #8a5a00;
-  --medium-bg: #fdf1d8;
-  --low: #3f5f8a;
-  --low-bg: #e6eef8;
-  --bar: #1f5f6b;
-  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
-  --font-body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #111816; --surface: #1a2321; --ink: #e5ece9; --muted: #9aaba5; --line: #2e3b38;
-    --accent: #6fb7c4; --accent-ink: #0d1716;
-    --high: #ff8a80; --high-bg: #3a1c1a; --medium: #f0c060; --medium-bg: #36290f; --low: #9cc0f0; --low-bg: #1b2a3d;
-    --bar: #6fb7c4; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #111816; --surface: #1a2321; --ink: #e5ece9; --muted: #9aaba5; --line: #2e3b38;
-  --accent: #6fb7c4; --accent-ink: #0d1716;
-  --high: #ff8a80; --high-bg: #3a1c1a; --medium: #f0c060; --medium-bg: #36290f; --low: #9cc0f0; --low-bg: #1b2a3d;
-  --bar: #6fb7c4; color-scheme: dark;
-}
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; padding-inline: 16px; padding-block: 20px 48px; }
-.page { max-width: 1240px; margin: 0 auto; display: grid; gap: 24px; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); align-items: start; }
-@media (max-width: 860px) { .page { grid-template-columns: minmax(0, 1fr); } }
-header.top { max-width: 1240px; margin: 0 auto 20px; display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between; }
-h1 { font-family: var(--font-display); font-weight: 600; font-size: 28px; letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
-.tagline { color: var(--muted); margin: 0; max-width: 60ch; }
-h2 { font-family: var(--font-display); font-weight: 600; font-size: 20px; margin: 0; text-wrap: balance; }
-h3 { font-family: var(--font-display); font-weight: 600; font-size: 16px; margin: 0; }
-.label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
-.rail { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
-@media (max-width: 860px) { .rail { position: static; } }
-.field { display: grid; gap: 6px; }
-.field label { font-weight: 500; font-size: 14px; }
-input[type="text"], input[type="number"], input[type="password"], select { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
-input:focus-visible, select:focus-visible, button:focus-visible, .drop:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; color: var(--muted); background: var(--bg); }
-.drop.over { border-color: var(--accent); color: var(--ink); }
-.drop strong { color: var(--accent); }
-.files { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.files li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; font-size: 14px; }
-.files .name { overflow-wrap: anywhere; }
-.files select { width: auto; padding: 4px 6px; font-size: 13px; }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-button { font: inherit; border-radius: 6px; padding: 9px 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
-button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
-button:disabled { opacity: 0.55; cursor: not-allowed; }
-button.link { border: none; background: none; padding: 2px 4px; color: var(--muted); }
-.note { font-size: 13px; color: var(--muted); margin: 0; }
-.progress { display: grid; gap: 8px; font-size: 14px; }
-.progress ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
-.progress li.done { color: var(--muted); }
-.progress li.now { font-weight: 600; }
-.meter { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
-.meter span { display: block; height: 100%; background: var(--bar); width: 0; transition: width 0.4s; }
-.error { color: var(--high); background: var(--high-bg); border-radius: 6px; padding: 10px 12px; font-size: 14px; }
-.report { display: grid; gap: 20px; min-width: 0; }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
-.banner { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; align-items: center; }
-.example-tag { font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--medium); background: var(--medium-bg); padding: 3px 8px; border-radius: 4px; }
-.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 20px; margin: 0; }
-.facts div { display: grid; gap: 2px; }
-.facts dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
-.facts dd { margin: 0; font-variant-numeric: tabular-nums; }
-.tally { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid transparent; }
-.chip.high { color: var(--high); background: var(--high-bg); }
-.chip.medium { color: var(--medium); background: var(--medium-bg); }
-.chip.low { color: var(--low); background: var(--low-bg); }
-button.chip { cursor: pointer; }
-button.chip[aria-pressed="false"] { opacity: 0.45; }
-.dims { display: grid; gap: 8px; }
-.dim { display: grid; grid-template-columns: 130px minmax(0, 1fr) 112px; gap: 10px; align-items: center; font-size: 14px; }
-.dim .track { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
-.dim .fill { height: 100%; background: var(--bar); border-radius: 5px; }
-.dim .val { font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
-.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.filters select { width: auto; }
-.findings { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.finding { border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; background: var(--bg); }
-.finding.high { border-left-color: var(--high); }
-.finding.medium { border-left-color: var(--medium); }
-.finding.low { border-left-color: var(--low); }
-.finding .head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
-.finding .kind { font-weight: 600; }
-.finding .where { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
-.finding .origin { font-size: 12px; color: var(--muted); margin-left: auto; }
-.finding p { margin: 0; max-width: 75ch; }
-.finding details summary { cursor: pointer; font-size: 13px; color: var(--accent); }
-.quote { margin: 6px 0 0; padding: 6px 10px; border-left: 2px solid var(--line); font-size: 14px; color: var(--muted); }
-.quote b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); }
-.table-wrap { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-size: 14px; }
-th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
-td.num { font-variant-numeric: tabular-nums; text-align: center; }
-td.mono { font-family: var(--font-mono); font-size: 13px; white-space: nowrap; }
-td.low-score { color: var(--high); font-weight: 600; }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.empty { color: var(--muted); }
-@media (prefers-reduced-motion: reduce) { .meter span { transition: none; } }
+:root{--bg:#f3f5f4;--surface:#fff;--ink:#17221f;--muted:#566560;--line:#d5dcd9;--accent:#1f5f6b;--accent-soft:#e3f0f2;--accent-ink:#fff;--warn-bg:#fdf1d8;--warn:#875800}
+@media (prefers-color-scheme:dark){:root{--bg:#111816;--surface:#1a2321;--ink:#e5ece9;--muted:#9aaba5;--line:#2e3b38;--accent:#6fb7c4;--accent-soft:#1b3236;--accent-ink:#0d1716;--warn-bg:#36290f;--warn:#f0c060;color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 "Segoe UI",system-ui,Arial,sans-serif;padding:24px 16px 56px}
+main{max-width:820px;margin:0 auto;display:grid;gap:18px}
+h1{font-size:34px;line-height:1.15;margin:0 0 10px}
+h2{font-size:22px;margin:0 0 6px}
+p{margin:0 0 10px}
+.muted{color:var(--muted);font-size:15px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px}
+.cta{display:inline-block;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:19px;text-decoration:none;padding:14px 26px;border-radius:10px;margin:8px 0 6px}
+.cta:hover{filter:brightness(1.1)}
+.pending{background:var(--warn-bg);border-left:4px solid var(--warn);border-radius:8px;padding:12px 14px}
+ol.steps{margin:0;padding-left:22px;display:grid;gap:8px}
+.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;list-style:none;margin:10px 0 0;padding:0}
+.checks li{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:15px}
+.checks strong{display:block}
+details{border-top:1px solid var(--line);padding:10px 0}
+details:last-child{padding-bottom:0}
+summary{cursor:pointer;font-weight:600}
+details p{margin:8px 0 0}
+a{color:var(--accent)}
 </style>
 </head>
 <body>
+<main>
+  <section class="card">
+    <h1>Check your tender requirements before you go to market</h1>
+    <p>Requirement Quality Review reads your RFQ, RFT or Statement of Requirements and lists every requirement in it. It scores each one and flags the ones likely to confuse suppliers or shut out small businesses, so you can fix them before release.</p>
+    <a class="cta" id="open" href="#" hidden>Open the reviewer</a>
+    <p class="pending" id="pending">The reviewer is being set up and will open from here shortly.</p>
+    <p class="muted">Free to use with a Claude account. A free account works. Nothing to install.</p>
+  </section>
 
-<header class="top">
-  <h1>Requirement Quality Review</h1>
-  <p class="tagline">Upload an RFQ, RFT or Statement of Requirements. Each requirement is listed, checked and scored for clarity, consistency, duplication, proportionality and SME accessibility.</p>
-</header>
+  <section class="card">
+    <h2>How to use it</h2>
+    <ol class="steps">
+      <li><strong>Sign in to Claude.</strong> If you don't have an account, create a free one at claude.ai when the reviewer asks.</li>
+      <li><strong>Add your document.</strong> Choose a PDF or Word file, or paste the text. You can add an RFQ or RFT with its SOR to catch conflicts between them.</li>
+      <li><strong>Describe the purchase.</strong> Say what you're buying, its total value including GST, and how risky it is.</li>
+      <li><strong>Start the review.</strong> The page tells you how long it will take. When it finishes, copy or download the report.</li>
+    </ol>
+  </section>
 
-<main class="page">
-  <form class="rail" id="review-form" novalidate>
-    <div class="field">
-      <span class="label">1. Documents</span>
-      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose documents to review">
-        Drop PDF or Word files here, or <strong>choose files</strong>
-        <input type="file" id="file-input" accept=".pdf,.docx,.txt,.md" multiple hidden>
-      </div>
-      <ul class="files" id="file-list"></ul>
-    </div>
-    <div class="field">
-      <span class="label">2. Procurement profile</span>
-      <label for="category">Category</label>
-      <input type="text" id="category" placeholder="e.g. Website support services">
-      <div class="row2">
-        <div class="field">
-          <label for="value">Estimated value (AUD, incl. GST)</label>
-          <input type="number" id="value" min="0" step="1000" placeholder="250000">
-        </div>
-        <div class="field">
-          <label for="risk">Risk</label>
-          <select id="risk">
-            <option value="low">Low</option>
-            <option value="medium" selected>Medium</option>
-            <option value="high">High</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <div class="field">
-      <span class="label">3. Your free Gemini key</span>
-      <label for="api-key">Gemini API key</label>
-      <input type="password" id="api-key" autocomplete="off" spellcheck="false" placeholder="Paste your key">
-      <p class="note">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. It goes straight from your browser to Google and nowhere else.</p>
-      <label class="note"><input type="checkbox" id="remember-key"> Remember the key on this computer</label>
-      <label for="model">Model</label>
-      <input type="text" id="model" value="auto" spellcheck="false" aria-describedby="model-note">
-      <p class="note" id="model-note">Leave as "auto" to use the best free Flash model your key can reach.</p>
-    </div>
-    <div class="actions">
-      <button type="submit" class="primary" id="run">Review documents</button>
-      <button type="button" id="stop" hidden>Stop</button>
-    </div>
-    <div class="progress" id="progress" hidden>
-      <div class="meter" aria-hidden="true"><span id="meter"></span></div>
-      <ol id="steps"></ol>
-      <p class="note" id="progress-note"></p>
-    </div>
-    <div class="error" id="form-error" role="alert" hidden></div>
-    <p class="note" id="claude-option" hidden>Have a Claude account? <a id="claude-link" href="#" target="_blank" rel="noopener">Use the Claude version instead</a>. You sign in with Claude and need no key; it uses your own Claude plan.</p>
-    <p class="note">Files are read in your browser and the text is sent to Google's Gemini API with your key. On Google's free tier, Google may use what you send to improve its products. Only review documents that are already public, such as tenders released to market, and never anything classified or commercially sensitive.</p>
-    <p class="note">The free tier allows only a few requests a minute, so a long SOR can take 20 minutes or more; the page waits and carries on automatically. Keep this page open while it runs.</p>
-  </form>
+  <section class="card">
+    <h2>What it checks</h2>
+    <ul class="checks">
+      <li><strong>Clarity</strong>Can a supplier tell exactly what to do?</li>
+      <li><strong>Consistency</strong>Do any requirements contradict each other?</li>
+      <li><strong>Duplication</strong>Is the same thing asked twice?</li>
+      <li><strong>Proportionality</strong>Is the evidence asked for justified by the value and risk?</li>
+      <li><strong>SME access</strong>Would a capable small business or new entrant be shut out?</li>
+      <li><strong>Defined terms</strong>Are acronyms and procurement terms explained?</li>
+    </ul>
+  </section>
 
-  <section class="report" id="report" aria-live="polite">
-    <div class="panel"><p class="empty">Loading…</p></div>
+  <section class="card">
+    <h2>Questions</h2>
+    <details>
+      <summary>Does it cost anything?</summary>
+      <p>No. It runs on your own Claude account, so each review counts towards your plan's usage. A short RFQ needs a few Claude messages. A long SOR can need 20 or more, which may use up a free plan's allowance for the day. If you hit the limit, leave the page open and continue later; finished steps aren't repeated.</p>
+    </details>
+    <details>
+      <summary>What happens to my document?</summary>
+      <p>Your file is read in your browser, and its text is sent to Claude under your own account. Only review documents that are ready for release to market. Don't add anything classified above OFFICIAL.</p>
+    </details>
+    <details>
+      <summary>Can I rely on the results?</summary>
+      <p>Treat them as a second pair of eyes. Each issue says whether it came from a fixed rule check or from Claude's judgement, and quotes the requirement so you can check it against your document. The proportionality tier follows the Commonwealth Procurement Rules threshold of $80,000 and can be argued either way.</p>
+    </details>
+    <details>
+      <summary>Who made this?</summary>
+      <p>It's a prototype built on the open-source <a href="https://github.com/charles-ong/wayfinder-procurement-evaluation">Wayfinder procurement evaluation</a> project.</p>
+    </details>
   </section>
 </main>
-
-<script src="engine.js"></script>
-<script type="module">
-// Set this to the published claude.ai artifact link to offer the sign-in-with-Claude version.
-const CLAUDE_VERSION_URL = "";
-
-let pdfjsPromise = null;
-const loadPdfjs = () => {
-  pdfjsPromise ??= import("./pdf.min.mjs").then((pdfjs) => {
-    pdfjs.GlobalWorkerOptions.workerSrc = new URL("./pdf.worker.min.mjs", import.meta.url).href;
-    return pdfjs;
-  });
-  return pdfjsPromise;
-};
-
-const Engine = window.WayfinderReview;
-const SEVERITIES = ["high", "medium", "low"];
-const KIND_NAMES = { rfq: "RFQ", rft: "RFT", sor: "SOR" };
-const $ = (id) => document.getElementById(id);
-const state = { files: [], review: null, isExample: true, markdown: "", controller: null };
-const filters = { severities: new Set(SEVERITIES), kind: "all" };
-
-const formatAud = (value) => new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(value);
-const element = (tag, attributes = {}, ...children) => {
-  const node = document.createElement(tag);
-  for (const [key, value] of Object.entries(attributes)) {
-    if (key === "class") node.className = value;
-    else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
-    else node.setAttribute(key, value);
+<script>
+  // Set to the published claude.ai link of the reviewer.
+  const REVIEWER_URL = "";
+  if (REVIEWER_URL) {
+    document.getElementById("open").href = REVIEWER_URL;
+    document.getElementById("open").hidden = false;
+    document.getElementById("pending").hidden = true;
   }
-  for (const child of children.flat()) if (child != null) node.append(child);
-  return node;
-};
-
-// ---------- Reading files ----------
-
-const guessKind = (name) => {
-  const lower = name.toLowerCase();
-  if (/\brfq\b|quotation/.test(lower)) return "rfq";
-  if (/\brft\b|tender/.test(lower) && !/statement|sor\b|requirement/.test(lower)) return "rft";
-  return "sor";
-};
-
-// Matches the server's pdf-parse output: page text, then a "-- n of m --" marker the engine strips.
-const readPdf = async (buffer) => {
-  const pdfjs = await loadPdfjs();
-  const pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise;
-  const pages = [];
-  for (let number = 1; number <= pdf.numPages; number += 1) {
-    const page = await pdf.getPage(number);
-    const content = await page.getTextContent();
-    let text = "";
-    for (const item of content.items) {
-      if (typeof item.str !== "string") continue;
-      text += item.str + (item.hasEOL ? "\n" : "");
-    }
-    pages.push(text.replace(/[ \t]+\n/g, "\n").trim() + `\n\n-- ${number} of ${pdf.numPages} --\n`);
-  }
-  return pages.join("\n");
-};
-
-// A .docx is a zip; read word/document.xml with the browser's own inflater.
-const readDocx = async (buffer) => {
-  const bytes = new Uint8Array(buffer);
-  const view = new DataView(buffer);
-  let end = bytes.length - 22;
-  while (end >= 0 && view.getUint32(end, true) !== 0x06054b50) end -= 1;
-  if (end < 0) throw new Error("This Word file could not be opened.");
-  const entries = view.getUint16(end + 10, true);
-  let pointer = view.getUint32(end + 16, true);
-  for (let index = 0; index < entries; index += 1) {
-    const method = view.getUint16(pointer + 10, true);
-    const compressedSize = view.getUint32(pointer + 20, true);
-    const nameLength = view.getUint16(pointer + 28, true);
-    const extraLength = view.getUint16(pointer + 30, true);
-    const commentLength = view.getUint16(pointer + 32, true);
-    const localOffset = view.getUint32(pointer + 42, true);
-    const name = new TextDecoder().decode(bytes.subarray(pointer + 46, pointer + 46 + nameLength));
-    pointer += 46 + nameLength + extraLength + commentLength;
-    if (name !== "word/document.xml") continue;
-    const dataStart = localOffset + 30 + view.getUint16(localOffset + 26, true) + view.getUint16(localOffset + 28, true);
-    const data = bytes.subarray(dataStart, dataStart + compressedSize);
-    const xmlText = method === 0
-      ? new TextDecoder().decode(data)
-      : await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
-    const xml = new DOMParser().parseFromString(xmlText, "application/xml");
-    const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
-    return [...xml.getElementsByTagNameNS(W, "p")].map((paragraph) => {
-      let line = "";
-      for (const node of paragraph.getElementsByTagNameNS(W, "*")) {
-        if (node.localName === "t") line += node.textContent;
-        else if (node.localName === "tab") line += "\t";
-        else if (node.localName === "br") line += "\n";
-      }
-      return line;
-    }).join("\n");
-  }
-  throw new Error("This file does not look like a Word document.");
-};
-
-const readFile = async (file) => {
-  const lower = file.name.toLowerCase();
-  if (lower.endsWith(".pdf")) return readPdf(await file.arrayBuffer());
-  if (lower.endsWith(".docx")) return readDocx(await file.arrayBuffer());
-  if (lower.endsWith(".txt") || lower.endsWith(".md")) return file.text();
-  throw new Error(`${file.name}: only PDF, Word (.docx), .txt and .md files can be read.`);
-};
-
-// ---------- File list ----------
-
-const renderFiles = () => {
-  const list = $("file-list");
-  list.replaceChildren(...state.files.map((entry, index) => {
-    const select = element("select", { "aria-label": `Document type for ${entry.file.name}`, id: `kind-${index}` },
-      ...Object.entries(KIND_NAMES).map(([value, label]) => {
-        const option = element("option", { value }, label);
-        if (value === entry.kind) option.selected = true;
-        return option;
-      }));
-    select.addEventListener("change", () => { entry.kind = select.value; });
-    return element("li", {},
-      element("span", { class: "name" }, entry.file.name),
-      select,
-      element("button", { type: "button", class: "link", "aria-label": `Remove ${entry.file.name}`, onclick: () => { state.files.splice(index, 1); renderFiles(); } }, "Remove"));
-  }));
-};
-
-const addFiles = (fileList) => {
-  for (const file of fileList) state.files.push({ file, kind: guessKind(file.name) });
-  renderFiles();
-};
-
-const drop = $("drop");
-drop.addEventListener("click", () => $("file-input").click());
-drop.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); $("file-input").click(); } });
-$("file-input").addEventListener("change", (event) => { addFiles(event.target.files); event.target.value = ""; });
-drop.addEventListener("dragover", (event) => { event.preventDefault(); drop.classList.add("over"); });
-drop.addEventListener("dragleave", () => drop.classList.remove("over"));
-drop.addEventListener("drop", (event) => { event.preventDefault(); drop.classList.remove("over"); addFiles(event.dataTransfer.files); });
-
-// ---------- Progress ----------
-
-const STEP_NAMES = ["Read the documents", "List the requirements", "Score each requirement", "Write the report"];
-const progress = { step: 0, extractionCalls: 0, assessmentCalls: 0, assessmentTotal: 0, requirementCount: 0 };
-
-const renderProgress = (note = "") => {
-  $("steps").replaceChildren(...STEP_NAMES.map((name, index) => {
-    let label = name;
-    if (index === 1 && progress.step === 1) label += ` (part ${progress.extractionCalls})`;
-    if (index === 2 && progress.step === 2) label += ` (batch ${progress.assessmentCalls} of ${progress.assessmentTotal}, ${progress.requirementCount} requirements)`;
-    return element("li", { class: index < progress.step ? "done" : index === progress.step ? "now" : "" }, label);
-  }));
-  const fraction = progress.step === 2 && progress.assessmentTotal
-    ? 0.4 + 0.55 * ((progress.assessmentCalls - 1) / progress.assessmentTotal)
-    : [0.03, 0.1, 0.4, 0.97][progress.step];
-  $("meter").style.width = `${Math.round(fraction * 100)}%`;
-  $("progress-note").textContent = note;
-};
-
-const onModelCall = ({ purpose, prompt, waitingSeconds }) => {
-  if (waitingSeconds) { renderProgress(`Free-tier limit reached. Waiting ${waitingSeconds} seconds, then carrying on.`); return; }
-  if (purpose === "requirementExtraction") {
-    progress.step = 1;
-    progress.extractionCalls += 1;
-  } else {
-    progress.step = 2;
-    progress.assessmentCalls += 1;
-    const listed = /<requirements>\n([\s\S]*?)\n<\/requirements>/.exec(prompt ?? "");
-    progress.requirementCount = listed ? listed[1].split("\n").length : 0;
-    progress.assessmentTotal = Math.ceil(progress.requirementCount / 20) || 1;
-  }
-  renderProgress(waitingSeconds ? `Free-tier limit reached. Waiting ${waitingSeconds} seconds, then carrying on.` : "Gemini is working. Each step can take a minute or two.");
-};
-
-// ---------- Running a review ----------
-
-const ERROR_COPY = {
-  cancelled: "Review stopped.",
-  "429": "Your free Gemini quota is used up for now (Google limits requests per minute and per day). Try again later.",
-  RESOURCE_EXHAUSTED: "Your free Gemini quota is used up for now (Google limits requests per minute and per day). Try again later.",
-  PERMISSION_DENIED: "Google rejected the key. Check it was copied in full from aistudio.google.com/apikey.",
-  UNAUTHENTICATED: "Google rejected the key. Check it was copied in full from aistudio.google.com/apikey.",
-  NOT_FOUND: "Google doesn't recognise that model name. Set Model to \"auto\" and try again.",
-};
-const KEY_STORAGE = "requirement-review.gemini-key";
-try {
-  const saved = localStorage.getItem(KEY_STORAGE);
-  if (saved) { $("api-key").value = saved; $("remember-key").checked = true; }
-} catch {}
-
-// Google retires model names often, so ask which ones this key can use and pick the newest stable Flash model.
-const modelVersion = (name) => (/gemini-(\d+(?:\.\d+)?)/.exec(name)?.[1] ?? "0").split(".").map(Number);
-const compareVersions = (left, right) => (right[0] - left[0]) || ((right[1] ?? 0) - (left[1] ?? 0));
-const pickGeminiModel = async (apiKey) => {
-  let response;
-  try {
-    response = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000", { headers: { "x-goog-api-key": apiKey } });
-  } catch {
-    throw new Error("Couldn't reach Google's Gemini API. Check your internet connection.");
-  }
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(ERROR_COPY[payload?.error?.status] ?? payload?.error?.message ?? `Google returned HTTP ${response.status}.`);
-  const usable = (payload?.models ?? [])
-    .filter((model) => (model.supportedGenerationMethods ?? []).includes("generateContent"))
-    .map((model) => model.name.replace(/^models\//, ""))
-    .filter((name) => /^gemini-/.test(name) && !/embed|tts|image|audio|live|vision|robotics|computer|thinking-exp/.test(name));
-  const rank = (name) => [/flash/.test(name) && !/lite/.test(name) ? 0 : /flash/.test(name) ? 1 : 2, /preview|exp/.test(name) ? 1 : 0, /-\d{3,}$|-latest$/.test(name) ? 1 : 0];
-  usable.sort((left, right) => {
-    const [leftRank, rightRank] = [rank(left), rank(right)];
-    for (let index = 0; index < leftRank.length; index += 1) if (leftRank[index] !== rightRank[index]) return leftRank[index] - rightRank[index];
-    return compareVersions(modelVersion(left), modelVersion(right));
-  });
-  if (usable.length === 0) throw new Error("Your key can't use any Gemini text models. Check it in Google AI Studio.");
-  return usable;
-};
-
-const showError = (message) => { $("form-error").textContent = message; $("form-error").hidden = false; };
-
-const runReview = async (event) => {
-  event.preventDefault();
-  $("form-error").hidden = true;
-  const category = $("category").value.trim();
-  const estimatedValue = Number($("value").value);
-  if (state.files.length === 0) return showError("Add at least one RFQ, RFT or SOR to review.");
-  if (!category) return showError("Enter the procurement category, for example 'Website support services'.");
-  if ($("value").value === "" || !Number.isFinite(estimatedValue) || estimatedValue < 0) return showError("Enter the estimated value in dollars, including GST.");
-
-  const apiKey = $("api-key").value.trim();
-  const requestedModel = $("model").value.trim() || "auto";
-  if (!apiKey) return showError("Paste your free Gemini API key. You can get one at aistudio.google.com/apikey.");
-  try {
-    if ($("remember-key").checked) localStorage.setItem(KEY_STORAGE, apiKey); else localStorage.removeItem(KEY_STORAGE);
-  } catch {}
-
-  Object.assign(progress, { step: 0, extractionCalls: 0, assessmentCalls: 0, assessmentTotal: 0, requirementCount: 0 });
-  $("progress").hidden = false;
-  $("run").disabled = true;
-  $("stop").hidden = false;
-  renderProgress();
-  state.controller = new AbortController();
-
-  try {
-    const documents = [];
-    for (const [index, entry] of state.files.entries()) {
-      const text = await readFile(entry.file);
-      documents.push({ documentId: `document-${index + 1}`, filename: entry.file.name, kind: entry.kind, text });
-    }
-    const unreadable = documents.filter((document) => document.text.trim().length === 0);
-    if (unreadable.length === documents.length) throw new Error("No text could be read from these files. A scanned PDF needs a text layer (run OCR first).");
-
-    const candidates = requestedModel === "auto" ? await pickGeminiModel(apiKey) : [requestedModel.replace(/^models\//, "")];
-    const withoutFreeQuota = [];
-    let result;
-    for (const modelName of candidates) {
-      $("model-note").textContent = `Using ${modelName}.`;
-      const model = Engine.createGeminiLanguageModel(apiKey, modelName, onModelCall, state.controller.signal);
-      result = await Engine.reviewRequirements(model, { documents, profile: { estimatedValue, riskTier: $("risk").value, category } });
-      if (result.error?.cause !== "no_free_quota") break;
-      withoutFreeQuota.push(modelName);
-    }
-    if (result.error?.cause === "no_free_quota") throw new Error(`Google gives your key no free allowance on any Gemini model it tried (${withoutFreeQuota.join(", ")}). Free use may not be available for your account or region; Google AI Studio shows your limits.`);
-    if (result.error) {
-      const copy = ERROR_COPY[result.error.cause];
-      throw new Error(copy ?? `The review stopped: ${result.error.message}`);
-    }
-    progress.step = 3;
-    renderProgress();
-    showReview(result.data, false);
-    progress.step = 4;
-    $("progress").hidden = true;
-  } catch (failure) {
-    showError(failure.message || "The review could not finish.");
-    $("progress").hidden = true;
-  } finally {
-    $("run").disabled = false;
-    $("stop").hidden = true;
-    state.controller = null;
-  }
-};
-
-$("review-form").addEventListener("submit", runReview);
-$("stop").addEventListener("click", () => state.controller?.abort());
-
-// ---------- Report ----------
-
-const average = (values) => values.reduce((sum, value) => sum + value, 0) / (values.length || 1);
-
-const clauseOf = (requirementsById, id) => {
-  const requirement = requirementsById.get(id);
-  return requirement?.clauseRef ? `${id} (cl. ${requirement.clauseRef})` : id;
-};
-
-const renderFindings = (review, requirementsById, list) => {
-  const visible = review.findings.filter((finding) => filters.severities.has(finding.severity) && (filters.kind === "all" || finding.kind === filters.kind));
-  if (visible.length === 0) {
-    list.replaceChildren(element("li", { class: "empty" }, "No findings match these filters."));
-    return;
-  }
-  list.replaceChildren(...visible.map((finding) => element("li", { class: `finding ${finding.severity}` },
-    element("div", { class: "head" },
-      element("span", { class: `chip ${finding.severity}` }, finding.severity),
-      element("span", { class: "kind" }, Engine.FINDING_KIND_LABELS[finding.kind] ?? finding.kind),
-      element("span", { class: "where" }, finding.requirementIds.map((id) => clauseOf(requirementsById, id)).join(" with ")),
-      element("span", { class: "origin" }, finding.origin === "rule" ? "Rule check" : "AI judgement")),
-    element("p", {}, finding.rationale),
-    element("details", {},
-      element("summary", {}, "Show requirement text"),
-      ...finding.requirementIds.map((id) => element("p", { class: "quote" }, element("b", {}, `${id} `), requirementsById.get(id)?.text ?? ""))))));
-};
-
-const renderScoresTable = (review, requirementsById) => {
-  const assessed = new Map(review.assessments.map((assessment) => [assessment.requirementId, assessment]));
-  const rows = review.requirements.map((requirement) => {
-    const assessment = assessed.get(requirement.id);
-    const scoreCells = Engine.QUALITY_DIMENSIONS.map((dimension) => {
-      const score = assessment?.scores[dimension]?.score;
-      return element("td", { class: `num${score != null && score <= 2 ? " low-score" : ""}`, title: assessment?.scores[dimension]?.rationale ?? "Not scored" }, score != null ? String(score) : "–");
-    });
-    return element("tr", {},
-      element("td", { class: "mono" }, requirement.id),
-      element("td", { class: "mono" }, requirement.clauseRef || "–"),
-      element("td", {}, requirement.text.length > 220 ? requirement.text.slice(0, 220) + "…" : requirement.text),
-      element("td", {}, `${requirement.obligation}, ${requirement.stage}`),
-      ...scoreCells);
-  });
-  return element("div", { class: "table-wrap" }, element("table", {},
-    element("thead", {}, element("tr", {},
-      element("th", {}, "Id"), element("th", {}, "Clause"), element("th", {}, "Requirement"), element("th", {}, "Type"),
-      ...Engine.QUALITY_DIMENSIONS.map((dimension) => element("th", {}, Engine.QUALITY_DIMENSION_LABELS[dimension])))),
-    element("tbody", {}, rows)));
-};
-
-const offerDownload = (filename, data) => {
-  const link = element("a", { href: URL.createObjectURL(new Blob([data], { type: filename.endsWith(".json") ? "application/json" : "text/markdown" })), download: filename });
-  document.body.append(link);
-  link.click();
-  link.remove();
-};
-
-const showReview = (review, isExample) => {
-  state.review = review;
-  state.isExample = isExample;
-  state.markdown = Engine.renderReviewReportMarkdown(review);
-  const requirementsById = new Map(review.requirements.map((requirement) => [requirement.id, requirement]));
-  const counts = Object.fromEntries(SEVERITIES.map((severity) => [severity, review.findings.filter((finding) => finding.severity === severity).length]));
-  const kinds = [...new Set(review.findings.map((finding) => finding.kind))];
-  const traced = review.requirements.filter((requirement) => requirement.sourceVerified).length;
-
-  const findingsList = element("ul", { class: "findings" });
-  const kindSelect = element("select", { id: "kind-filter", "aria-label": "Filter findings by type" },
-    element("option", { value: "all" }, "All finding types"),
-    ...kinds.map((kind) => element("option", { value: kind }, Engine.FINDING_KIND_LABELS[kind] ?? kind)));
-  kindSelect.value = filters.kind;
-  kindSelect.addEventListener("change", () => { filters.kind = kindSelect.value; renderFindings(review, requirementsById, findingsList); });
-  const severityToggles = SEVERITIES.map((severity) => {
-    const toggle = element("button", { type: "button", class: `chip ${severity}`, "aria-pressed": String(filters.severities.has(severity)) }, `${counts[severity]} ${severity}`);
-    toggle.addEventListener("click", () => {
-      if (filters.severities.has(severity)) filters.severities.delete(severity); else filters.severities.add(severity);
-      toggle.setAttribute("aria-pressed", String(filters.severities.has(severity)));
-      renderFindings(review, requirementsById, findingsList);
-    });
-    return toggle;
-  });
-
-  const markdownButton = element("button", { type: "button" }, "Download report (.md)");
-  markdownButton.addEventListener("click", () => offerDownload("requirement-review.md", state.markdown, markdownButton));
-  const jsonButton = element("button", { type: "button" }, "Download data (.json)");
-  jsonButton.addEventListener("click", () => offerDownload("requirement-review.json", JSON.stringify(review, null, 2), jsonButton));
-
-  const dimensionRows = Engine.QUALITY_DIMENSIONS.map((dimension) => {
-    const scores = review.assessments.map((assessment) => assessment.scores[dimension].score);
-    const mean = average(scores);
-    const weak = scores.filter((score) => score <= 2).length;
-    return element("div", { class: "dim" },
-      element("span", {}, Engine.QUALITY_DIMENSION_LABELS[dimension]),
-      element("div", { class: "track", role: "img", "aria-label": `${mean.toFixed(1)} out of 5` }, element("div", { class: "fill", style: `width:${(mean / 5) * 100}%` })),
-      element("span", { class: "val" }, `${mean.toFixed(1)} / 5${weak ? ` · ${weak}≤2` : ""}`));
-  });
-
-  const summary = element("div", { class: "panel" },
-    element("div", { class: "banner" },
-      element("h2", {}, review.documents.map((document) => document.filename).join(", ")),
-      isExample ? element("span", { class: "example-tag" }, "Example review") : null),
-    isExample ? element("p", { class: "note" }, "This example reviews the Statement of Requirements from the Department of Finance GovCMS DXP services panel tender, at an assumed $5m value and medium risk. Upload your own documents on the left to replace it.") : null,
-    element("dl", { class: "facts" },
-      element("div", {}, element("dt", {}, "Category"), element("dd", {}, review.profile.category)),
-      element("div", {}, element("dt", {}, "Value"), element("dd", {}, formatAud(review.profile.estimatedValue))),
-      element("div", {}, element("dt", {}, "Risk"), element("dd", {}, review.profile.riskTier)),
-      element("div", {}, element("dt", {}, "Proportionality tier"), element("dd", {}, review.tier.label)),
-      element("div", {}, element("dt", {}, "Requirements"), element("dd", {}, `${review.requirements.length} (${traced} traced to source)`)),
-      element("div", {}, element("dt", {}, "Pre-award mandatory criteria"), element("dd", {}, String(review.mandatoryCriteriaCount)))),
-    element("div", { class: "tally" }, ...SEVERITIES.map((severity) => element("span", { class: `chip ${severity}` }, `${counts[severity]} ${severity}`))),
-    element("div", { class: "actions" }, markdownButton, jsonButton));
-
-  const dimensions = element("div", { class: "panel" }, element("h3", {}, "Average score by dimension"), element("div", { class: "dims" }, dimensionRows),
-    element("p", { class: "note" }, "1 means a serious problem and 5 means no concern. The count after the dot is how many requirements scored 2 or lower."));
-
-  const findings = element("div", { class: "panel" },
-    element("h3", {}, "Findings"),
-    element("div", { class: "filters" }, ...severityToggles, kindSelect),
-    findingsList);
-
-  const table = element("details", { class: "panel" },
-    element("summary", {}, element("h3", { style: "display:inline" }, `All ${review.requirements.length} requirements and scores`)),
-    renderScoresTable(review, requirementsById));
-
-  $("report").replaceChildren(summary, dimensions, findings, table);
-  renderFindings(review, requirementsById, findingsList);
-};
-
-if (CLAUDE_VERSION_URL) {
-  $("claude-link").href = CLAUDE_VERSION_URL;
-  $("claude-option").hidden = false;
-}
-Promise.reject()
-  .catch(() => { $("report").replaceChildren(element("div", { class: "panel" }, element("p", { class: "empty" }, "Add an RFQ, RFT or SOR on the left, fill in the profile and your free Gemini key, then press Review documents. The report appears here: findings by severity, average scores and every requirement with its scores."))); });
 </script>
 </body>
 </html>
