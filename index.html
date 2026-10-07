@@ -403,7 +403,7 @@ const pickGeminiModel = async (apiKey) => {
     return compareVersions(modelVersion(left), modelVersion(right));
   });
   if (usable.length === 0) throw new Error("Your key can't use any Gemini text models. Check it in Google AI Studio.");
-  return usable[0];
+  return usable;
 };
 
 const showError = (message) => { $("form-error").textContent = message; $("form-error").hidden = false; };
@@ -440,10 +440,17 @@ const runReview = async (event) => {
     const unreadable = documents.filter((document) => document.text.trim().length === 0);
     if (unreadable.length === documents.length) throw new Error("No text could be read from these files. A scanned PDF needs a text layer (run OCR first).");
 
-    const modelName = requestedModel === "auto" ? await pickGeminiModel(apiKey) : requestedModel.replace(/^models\//, "");
-    $("model-note").textContent = `Using ${modelName}.`;
-    const model = Engine.createGeminiLanguageModel(apiKey, modelName, onModelCall, state.controller.signal);
-    const result = await Engine.reviewRequirements(model, { documents, profile: { estimatedValue, riskTier: $("risk").value, category } });
+    const candidates = requestedModel === "auto" ? await pickGeminiModel(apiKey) : [requestedModel.replace(/^models\//, "")];
+    const withoutFreeQuota = [];
+    let result;
+    for (const modelName of candidates) {
+      $("model-note").textContent = `Using ${modelName}.`;
+      const model = Engine.createGeminiLanguageModel(apiKey, modelName, onModelCall, state.controller.signal);
+      result = await Engine.reviewRequirements(model, { documents, profile: { estimatedValue, riskTier: $("risk").value, category } });
+      if (result.error?.cause !== "no_free_quota") break;
+      withoutFreeQuota.push(modelName);
+    }
+    if (result.error?.cause === "no_free_quota") throw new Error(`Google gives your key no free allowance on any Gemini model it tried (${withoutFreeQuota.join(", ")}). Free use may not be available for your account or region; Google AI Studio shows your limits.`);
     if (result.error) {
       const copy = ERROR_COPY[result.error.cause];
       throw new Error(copy ?? `The review stopped: ${result.error.message}`);
