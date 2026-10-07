@@ -108,3 +108,4 @@ export * from "./template-field-value";
 export * from "./requirement-review";
 export * from "./proportionality-framework";
 export * from "./requirement-checks";
+export * from "./procurement-text";

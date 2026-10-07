@@ -98,6 +98,54 @@ describe("extractRequirements", () => {
     expect(call?.prompt).toContain(SAMPLE_SOR.text);
   });
 
+  it("splits a long document into sections, one model call each, numbering requirements on across them", async () => {
+    const longDocument = {
+      ...SAMPLE_SOR,
+      text: "1. Scope\na) The Supplier must attend kick-off.\n2. Reporting\na) The Supplier must report monthly.\n",
+    };
+    const generateObject = vi
+      .fn()
+      .mockResolvedValueOnce(
+        ok({
+          object: extraction([{ clauseRef: "1 a)", text: "The Supplier must attend kick-off.", obligation: "mandatory", stage: "delivery", linkedRisk: "" }]),
+          usage,
+          provider: "anthropic",
+          model: "test",
+        }),
+      )
+      .mockResolvedValueOnce(
+        ok({
+          object: { ...extraction([{ clauseRef: "2 a)", text: "The Supplier must report monthly.", obligation: "mandatory", stage: "delivery", linkedRisk: "" }]), definedTerms: ["Supplier"] },
+          usage,
+          provider: "anthropic",
+          model: "test",
+        }),
+      );
+    const model = { provider: "anthropic", generateObject } as unknown as ILanguageModel;
+
+    const result = await extractRequirements(model, { document: longDocument, firstRequirementNumber: 1, maxSectionChars: 50 });
+
+    expect(generateObject).toHaveBeenCalledTimes(2);
+    const prompts = generateObject.mock.calls.map(([call]) => call.prompt as string);
+    expect(prompts[0]).toContain('part="1 of 2"');
+    expect(prompts[0]).toContain("1. Scope");
+    expect(prompts[0]).not.toContain("2. Reporting");
+    expect(prompts[1]).toContain('part="2 of 2"');
+    expect(result.data?.requirements.map((requirement) => [requirement.id, requirement.sourceVerified])).toEqual([
+      ["R1", true],
+      ["R2", true],
+    ]);
+    expect(result.data?.definedTerms).toEqual(["Supplier"]);
+  });
+
+  it("asks the model to leave bracketed notes to tenderers out of requirement text", async () => {
+    const model = makeModel(extraction([]));
+
+    await extractRequirements(model, { document: SAMPLE_SOR, firstRequirementNumber: 1 });
+
+    expect(vi.mocked(model.generateObject).mock.calls[0]?.[0].system).toContain("Note to Tenderers");
+  });
+
   it("returns the model's error unchanged", async () => {
     const failure = domainError("AI_PROVIDER_FAILED", "provider down");
     const model = {

@@ -1,11 +1,22 @@
 import type { ProportionalityTier } from "./proportionality-framework";
 import type { EvidenceKind, Requirement, RequirementFinding } from "./requirement-review";
 
-// Byte comparison, like verifyVerbatim: no trimming or case folding, because
-// either is the transformation that makes a requirement paraphrased rather than
-// copied from its clause.
-export const locateRequirementText = (text: string, documentText: string): boolean =>
-  text.length > 0 && documentText.includes(text);
+const collapseWhitespace = (text: string): string => text.replace(/\s+/g, " ").trim();
+
+// Exact apart from whitespace: a clause in a PDF wraps across lines and pages,
+// so the model's single-line copy can never match byte for byte. Case and
+// punctuation still must, because changing either is what makes a requirement
+// paraphrased rather than copied from its clause.
+export const locateRequirementText = (text: string, documentText: string): boolean => {
+  const needle = collapseWhitespace(text);
+  return needle.length > 0 && collapseWhitespace(documentText).includes(needle);
+};
+
+// Buyer guidance attached to a clause, often repeated word for word across
+// clauses, so it would make unrelated requirements look like duplicates.
+const NOTE_TO_RESPONDENTS = /\[Note to (?:Tenderers|Respondents|Suppliers|Bidders)[^\]]*\]/gi;
+
+export const stripNotesToRespondents = (text: string): string => text.replace(NOTE_TO_RESPONDENTS, " ");
 
 const STOP_WORDS = new Set([
   "the", "and", "for", "with", "that", "this", "must", "shall", "will", "should",
@@ -68,7 +79,7 @@ export const findRepeatedRequirements = (
   requirements: readonly Requirement[],
   threshold = DUPLICATE_SIMILARITY_THRESHOLD,
 ): RequirementFinding[] => {
-  const words = requirements.map((requirement) => significantWords(requirement.text));
+  const words = requirements.map((requirement) => significantWords(stripNotesToRespondents(requirement.text)));
   const findings: RequirementFinding[] = [];
   requirements.forEach((later, laterIndex) => {
     const laterWords = words[laterIndex] ?? new Set<string>();
@@ -83,12 +94,18 @@ export const findRepeatedRequirements = (
   return findings;
 };
 
-// All-caps words that are emphasis or so widely understood in Australian
-// commercial documents that flagging them would bury the real gaps.
+// All-caps words that are emphasis, or so widely understood in Australian
+// commercial and ICT documents that flagging them would bury the real gaps.
 const COMMON_UPPERCASE_WORDS = new Set([
   "MUST", "SHALL", "SHOULD", "MAY", "NOT", "AND", "OR", "WILL", "NO", "ANY", "ALL",
   "GST", "AUD", "ABN", "ACN", "ISO", "AEST", "AEDT", "CV", "CVS", "PDF",
+  "IT", "ICT", "API", "REST", "URL", "HTML", "CSS", "JSON", "XML", "CSV", "HTTP", "HTTPS",
+  "TLS", "SSL", "SMS", "FAQ", "UI", "UX", "AI", "USB",
+  "NSW", "VIC", "QLD", "SA", "WA", "TAS", "ACT", "NT",
 ]);
+
+// Cross-references such as "Attachment D4" or "Part B2" name a document, not a term.
+const DOCUMENT_CODE = /^[A-Z]\d+$/;
 
 const ACRONYM_PATTERN = /\b[A-Z][A-Z0-9]{1,}s?\b/g;
 const INLINE_EXPANSION_PATTERN = /\(([A-Z][A-Z0-9]{1,})s?\)/g;
@@ -117,7 +134,8 @@ export const findUndefinedAcronyms = (
   return requirements.flatMap((requirement): RequirementFinding[] => {
     const acronyms = [...new Set((requirement.text.match(ACRONYM_PATTERN) ?? []).map(stripPlural))];
     const undefinedAcronyms = acronyms.filter(
-      (acronym) => !defined.has(acronym) && !COMMON_UPPERCASE_WORDS.has(acronym.toUpperCase()),
+      (acronym) =>
+        !defined.has(acronym) && !COMMON_UPPERCASE_WORDS.has(acronym.toUpperCase()) && !DOCUMENT_CODE.test(acronym),
     );
     if (undefinedAcronyms.length === 0) return [];
     return [
