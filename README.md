@@ -1,6 +1,6 @@
-# Wayfinder Procurement Evaluation: procurement prototypes
+# Better Procurement prototypes
 
-The front page for a set of free tools that help with Australian Government procurement. Each is a claude.ai artifact that a visitor opens and duplicates, so it runs on their own Claude account. Usage counts against each person's own plan.
+The front page for a set of free prototypes from the Better Procurement project that help with Australian Government procurement. This repository is the Wayfinder Procurement Evaluation project they are built on. Each is a claude.ai artifact that a visitor opens and duplicates, so it runs on their own Claude account. Usage counts against each person's own plan.
 
 | Page | What it is |
 |---|---|
