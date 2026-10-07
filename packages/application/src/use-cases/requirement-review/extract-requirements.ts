@@ -2,6 +2,7 @@ import {
   classifyEvidenceRequests,
   locateRequirementText,
   ok,
+  splitIntoSections,
   type ILanguageModel,
   type ProcurementDocumentKind,
   type ProcurementSourceDocument,
@@ -21,8 +22,13 @@ export interface ExtractRequirementsInput {
   // Ids run on across every document in a review, so the caller says where this
   // document's numbering starts.
   firstRequirementNumber: number;
+  maxSectionChars?: number;
   userId?: string | null;
 }
+
+// Roughly what one call can turn into a complete requirement list without
+// running out of output: a 37-page panel SOR is about 100,000 characters.
+export const DEFAULT_MAX_SECTION_CHARS = 15_000;
 
 export interface ExtractedRequirements {
   requirements: Requirement[];
@@ -37,8 +43,10 @@ const buildSystemPrompt = (kind: ProcurementDocumentKind): string => `<role>
   - One item per obligation. Split a clause that imposes two obligations; never join two clauses into one item.
   - Copy each requirement's text byte for byte from the document. Leave out the clause number but change nothing else. If a sentence opens with a reason ("To manage the risk of …, the Supplier must …"), copy only the obligation and record the reason as its linked risk.
   - Include evaluation criteria, conditions for participation, submission requirements and service requirements. Exclude background, definitions and instructions addressed only to the buyer.
+  - Leave bracketed notes such as "[Note to Tenderers: …]" out of the requirement text. They are guidance to respondents, not obligations.
   - Record a linked risk only when the document states it. Never infer one.
   - Work only from the document. Do not add requirements it does not contain.
+  - You may be given one part of a longer document. List only the requirements in the part you are given.
 </rules>`;
 
 const toRequirement = (
@@ -65,20 +73,28 @@ export const extractRequirements = async (
   input: ExtractRequirementsInput,
 ): Promise<Result<ExtractedRequirements>> => {
   const { document } = input;
-  const result = await languageModel.generateObject<RequirementExtractionData>({
-    purpose: "requirementExtraction",
-    userId: input.userId,
-    system: buildSystemPrompt(document.kind),
-    prompt: `<document filename="${document.filename}">\n${document.text}\n</document>`,
-    schema: requirementExtractionSchema,
-  });
-  if (result.error) return result;
+  const parts = splitIntoSections(document.text, input.maxSectionChars ?? DEFAULT_MAX_SECTION_CHARS);
+  const requirements: Requirement[] = [];
+  const definedTerms = new Set<string>();
 
-  const items = result.data.object.requirements.filter((item) => item.text.trim().length > 0);
-  return ok({
-    requirements: items.map((item, index) =>
-      toRequirement(document, item, `R${input.firstRequirementNumber + index}`),
-    ),
-    definedTerms: result.data.object.definedTerms,
-  });
+  for (const [index, part] of parts.entries()) {
+    const result = await languageModel.generateObject<RequirementExtractionData>({
+      purpose: "requirementExtraction",
+      userId: input.userId,
+      system: buildSystemPrompt(document.kind),
+      prompt: `<document filename="${document.filename}" part="${index + 1} of ${parts.length}">\n${part}\n</document>`,
+      schema: requirementExtractionSchema,
+    });
+    if (result.error) return result;
+
+    // Verified against the whole document, not the part: a clause cut at a
+    // part boundary still traces to its source.
+    const items = result.data.object.requirements.filter((item) => item.text.trim().length > 0);
+    for (const item of items) {
+      requirements.push(toRequirement(document, item, `R${input.firstRequirementNumber + requirements.length}`));
+    }
+    for (const term of result.data.object.definedTerms) definedTerms.add(term);
+  }
+
+  return ok({ requirements, definedTerms: [...definedTerms] });
 };

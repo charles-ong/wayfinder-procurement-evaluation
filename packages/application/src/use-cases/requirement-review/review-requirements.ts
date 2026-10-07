@@ -8,6 +8,7 @@ import {
   findUnlinkedMandatoryCriteria,
   mergeFindings,
   ok,
+  removePageFurniture,
   resolveProportionalityTier,
   type FindingSeverity,
   type ILanguageModel,
@@ -89,7 +90,11 @@ export const reviewRequirements = async (
   const definedTerms: string[] = [];
   const documents: ReviewedDocument[] = [];
 
-  for (const document of input.documents) {
+  // Page headers and markers are stripped once, here, so extraction, the
+  // source check and the rule checks all read the same clean text.
+  const cleanedDocuments = input.documents.map((document) => ({ ...document, text: removePageFurniture(document.text) }));
+
+  for (const document of cleanedDocuments) {
     const summary = { documentId: document.documentId, filename: document.filename, kind: document.kind };
     if (document.text.trim().length === 0) {
       documents.push({ ...summary, requirementCount: 0, readable: false });
@@ -108,7 +113,7 @@ export const reviewRequirements = async (
 
   const ruleFindings = [
     ...findRepeatedRequirements(requirements),
-    ...findUndefinedAcronyms(requirements, input.documents.map((document) => document.text), definedTerms),
+    ...findUndefinedAcronyms(requirements, cleanedDocuments.map((document) => document.text), definedTerms),
     ...findUnlinkedMandatoryCriteria(requirements),
     ...findDisproportionateEvidence(requirements, tier),
   ];

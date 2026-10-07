@@ -32,6 +32,12 @@ describe("locateRequirementText", () => {
     expect(locateRequirementText("The supplier must provide a helpdesk.", documentText)).toBe(false);
   });
 
+  it("matches a requirement whose clause wraps across lines in the source", () => {
+    const documentText = "a) The Contractor must ensure all Services\n\n\ncomply with best industry practice.";
+
+    expect(locateRequirementText("The Contractor must ensure all Services comply with best industry practice.", documentText)).toBe(true);
+  });
+
   it("is false for empty text", () => {
     expect(locateRequirementText("", "anything")).toBe(false);
   });
@@ -79,6 +85,14 @@ describe("findRepeatedRequirements", () => {
     expect(findings[0]?.rationale).toContain("10 against 5");
   });
 
+  it("ignores Notes to Tenderers when comparing, since they are guidance shared across clauses", () => {
+    const note = " [Note to Tenderers: This is referenced in section 3.1 of Attachment D - Part D6 - Response to General Requirements and Evaluation Criteria. Tenderers should describe their capability, approach and pricing in their response, including relevant experience and resourcing.]";
+    const first = requirement({ id: "R1", text: `The Contractor may be required to provide additional assessment and advisory services.${note}` });
+    const second = requirement({ id: "R2", text: `The Contractor may be required to provide training and skills development services.${note}` });
+
+    expect(findRepeatedRequirements([first, second])).toEqual([]);
+  });
+
   it("does not flag requirements about different things", () => {
     const first = requirement({ id: "R1", text: "The Supplier must provide monthly performance reports." });
     const second = requirement({ id: "R2", text: "All staff must hold a current police check." });
@@ -106,6 +120,24 @@ describe("findUndefinedAcronyms", () => {
     const documents = ["Definitions\nKPI means key performance indicator."];
 
     expect(findUndefinedAcronyms([flagged], documents, ["WHS"])).toEqual([]);
+  });
+
+  it("ignores attachment and schedule codes such as D4 and D6", () => {
+    const flagged = requirement({ text: "Respond at Attachment D4 and Part D6." });
+
+    expect(findUndefinedAcronyms([flagged], [], [])).toEqual([]);
+  });
+
+  it("ignores widely known technical acronyms and state names", () => {
+    const flagged = requirement({ text: "Expose a REST API returning JSON or CSV over HTTPS with TLS, and SMS alerts in NSW." });
+
+    expect(findUndefinedAcronyms([flagged], [], [])).toEqual([]);
+  });
+
+  it("still flags a specialist acronym among common ones", () => {
+    const flagged = requirement({ text: "Provide an API and an IRAP assessment." });
+
+    expect(findUndefinedAcronyms([flagged], [], [])[0]?.rationale).toContain("IRAP");
   });
 
   it("ignores capitalised modal verbs and common commercial acronyms", () => {

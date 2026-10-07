@@ -123,6 +123,28 @@ describe("reviewRequirements", () => {
     expect(result.data!.requirements[9]?.documentId).toBe("doc-rft");
   });
 
+  it("removes PDF page headers and markers before extraction, so a clause split by a page break still traces", async () => {
+    const pageBroken: ProcurementSourceDocument = {
+      ...SAMPLE_SOR,
+      text: [
+        "Workshop SOR\nStatement of Requirements\n1\n3. Mandatory requirements\n3.1 The Supplier must hold ISO 9001",
+        "-- 1 of 3 --",
+        "Workshop SOR\nStatement of Requirements\n2\ncertification.\n3.2 Another clause.",
+        "-- 2 of 3 --",
+        "Workshop SOR\nStatement of Requirements\n3\nEnd.",
+        "-- 3 of 3 --",
+      ].join("\n"),
+    };
+    const model = scriptedModel();
+
+    const result = await reviewRequirements(model, { documents: [pageBroken], profile: SAMPLE_PROFILE });
+
+    const extractionPrompt = vi.mocked(model.generateObject).mock.calls[0]?.[0].prompt ?? "";
+    expect(extractionPrompt).not.toContain("-- 1 of 3 --");
+    expect(extractionPrompt).not.toContain("Workshop SOR");
+    expect(result.data?.requirements[0]?.sourceVerified).toBe(true);
+  });
+
   it("rejects a review with no documents", async () => {
     const result = await reviewRequirements(scriptedModel(), { documents: [], profile: SAMPLE_PROFILE });
 
