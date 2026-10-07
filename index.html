@@ -168,7 +168,8 @@ td.low-score { color: var(--high); font-weight: 600; }
       <p class="note">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. It goes straight from your browser to Google and nowhere else.</p>
       <label class="note"><input type="checkbox" id="remember-key"> Remember the key on this computer</label>
       <label for="model">Model</label>
-      <input type="text" id="model" value="gemini-2.5-flash" spellcheck="false">
+      <input type="text" id="model" value="auto" spellcheck="false" aria-describedby="model-note">
+      <p class="note" id="model-note">Leave as "auto" to use the best free Flash model your key can reach.</p>
     </div>
     <div class="actions">
       <button type="submit" class="primary" id="run">Review documents</button>
@@ -371,13 +372,39 @@ const ERROR_COPY = {
   RESOURCE_EXHAUSTED: "Your free Gemini quota is used up for now (Google limits requests per minute and per day). Try again later.",
   PERMISSION_DENIED: "Google rejected the key. Check it was copied in full from aistudio.google.com/apikey.",
   UNAUTHENTICATED: "Google rejected the key. Check it was copied in full from aistudio.google.com/apikey.",
-  NOT_FOUND: "Google doesn't recognise that model name. Try gemini-2.5-flash, or check the models listed in Google AI Studio.",
+  NOT_FOUND: "Google doesn't recognise that model name. Set Model to \"auto\" and try again.",
 };
 const KEY_STORAGE = "requirement-review.gemini-key";
 try {
   const saved = localStorage.getItem(KEY_STORAGE);
   if (saved) { $("api-key").value = saved; $("remember-key").checked = true; }
 } catch {}
+
+// Google retires model names often, so ask which ones this key can use and pick the newest stable Flash model.
+const modelVersion = (name) => (/gemini-(\d+(?:\.\d+)?)/.exec(name)?.[1] ?? "0").split(".").map(Number);
+const compareVersions = (left, right) => (right[0] - left[0]) || ((right[1] ?? 0) - (left[1] ?? 0));
+const pickGeminiModel = async (apiKey) => {
+  let response;
+  try {
+    response = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000", { headers: { "x-goog-api-key": apiKey } });
+  } catch {
+    throw new Error("Couldn't reach Google's Gemini API. Check your internet connection.");
+  }
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(ERROR_COPY[payload?.error?.status] ?? payload?.error?.message ?? `Google returned HTTP ${response.status}.`);
+  const usable = (payload?.models ?? [])
+    .filter((model) => (model.supportedGenerationMethods ?? []).includes("generateContent"))
+    .map((model) => model.name.replace(/^models\//, ""))
+    .filter((name) => /^gemini-/.test(name) && !/embed|tts|image|audio|live|vision|robotics|computer|thinking-exp/.test(name));
+  const rank = (name) => [/flash/.test(name) && !/lite/.test(name) ? 0 : /flash/.test(name) ? 1 : 2, /preview|exp/.test(name) ? 1 : 0, /-\d{3,}$|-latest$/.test(name) ? 1 : 0];
+  usable.sort((left, right) => {
+    const [leftRank, rightRank] = [rank(left), rank(right)];
+    for (let index = 0; index < leftRank.length; index += 1) if (leftRank[index] !== rightRank[index]) return leftRank[index] - rightRank[index];
+    return compareVersions(modelVersion(left), modelVersion(right));
+  });
+  if (usable.length === 0) throw new Error("Your key can't use any Gemini text models. Check it in Google AI Studio.");
+  return usable[0];
+};
 
 const showError = (message) => { $("form-error").textContent = message; $("form-error").hidden = false; };
 
@@ -391,7 +418,7 @@ const runReview = async (event) => {
   if ($("value").value === "" || !Number.isFinite(estimatedValue) || estimatedValue < 0) return showError("Enter the estimated value in dollars, including GST.");
 
   const apiKey = $("api-key").value.trim();
-  const modelName = $("model").value.trim() || "gemini-2.5-flash";
+  const requestedModel = $("model").value.trim() || "auto";
   if (!apiKey) return showError("Paste your free Gemini API key. You can get one at aistudio.google.com/apikey.");
   try {
     if ($("remember-key").checked) localStorage.setItem(KEY_STORAGE, apiKey); else localStorage.removeItem(KEY_STORAGE);
@@ -413,6 +440,8 @@ const runReview = async (event) => {
     const unreadable = documents.filter((document) => document.text.trim().length === 0);
     if (unreadable.length === documents.length) throw new Error("No text could be read from these files. A scanned PDF needs a text layer (run OCR first).");
 
+    const modelName = requestedModel === "auto" ? await pickGeminiModel(apiKey) : requestedModel.replace(/^models\//, "");
+    $("model-note").textContent = `Using ${modelName}.`;
     const model = Engine.createGeminiLanguageModel(apiKey, modelName, onModelCall, state.controller.signal);
     const result = await Engine.reviewRequirements(model, { documents, profile: { estimatedValue, riskTier: $("risk").value, category } });
     if (result.error) {
