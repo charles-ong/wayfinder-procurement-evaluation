@@ -1,7 +1,12 @@
-# Requirement Quality Review
+# Wayfinder Procurement Evaluation: procurement prototypes
 
-The front page for a free tool that helps Australian Government buyers check an RFQ, RFT or Statement of Requirements (SOR) before going to market. It scores every requirement for clarity, consistency, duplication, proportionality to value and risk, and accessibility for SMEs and new entrants. It also flags conflicts, gold-plating, unnecessary evidence requests, undefined terms and mandatory criteria not linked to a stated risk.
+The front page for a set of free tools that help with Australian Government procurement. Each is a claude.ai artifact that a visitor opens and duplicates, so it runs on their own Claude account. Usage counts against each person's own plan.
 
-The reviewer is a claude.ai artifact (https://claude.ai/artifact/FMEGmEyAp5yFkHoKka6Tdp). Claude only runs it in a copy the viewer owns, so each buyer opens it and chooses Duplicate (a free account works). `requirement-review.html` is the same page, for buyers who can't duplicate. Usage counts against each buyer's own plan.
+| Page | What it is |
+|---|---|
+| `index.html` | The hub. Lists every prototype and says how to set one up. |
+| `requirement-quality-review/` | Set-up page for Requirement Quality Review, which checks an RFQ, RFT or Statement of Requirements before going to market. |
+| `requirement-review.html` | The same reviewer as a file, for buyers who can't duplicate. |
+| `supplier-navigation-assistant/` | Set-up page for Supplier Navigation Assistant, which helps suppliers find and understand what Selling to Government and AusTender publish. |
 
-The review engine is the requirement-review module from the Wayfinder procurement evaluation project, bundled into the artifact.
+The review engine in Requirement Quality Review is the requirement-review module from the Wayfinder procurement evaluation project, bundled into the artifact.

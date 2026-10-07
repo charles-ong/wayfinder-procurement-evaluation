@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Requirement Quality Review</title>
+<meta name="description" content="A free tool for Australian Government buyers that reviews RFQs, RFTs and Statements of Requirements for clarity, duplication, proportionality and SME access.">
+<style>
+:root{--bg:#f3f5f4;--surface:#fff;--ink:#17221f;--muted:#566560;--line:#d5dcd9;--accent:#1f5f6b;--accent-soft:#e3f0f2;--accent-ink:#fff;--warn-bg:#fdf1d8;--warn:#875800}
+@media (prefers-color-scheme:dark){:root{--bg:#111816;--surface:#1a2321;--ink:#e5ece9;--muted:#9aaba5;--line:#2e3b38;--accent:#6fb7c4;--accent-soft:#1b3236;--accent-ink:#0d1716;--warn-bg:#36290f;--warn:#f0c060;color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 "Segoe UI",system-ui,Arial,sans-serif;padding:24px 16px 56px}
+main{max-width:820px;margin:0 auto;display:grid;gap:18px}
+h1{font-size:34px;line-height:1.15;margin:0 0 10px}
+h2{font-size:22px;margin:0 0 6px}
+p{margin:0 0 10px}
+.muted{color:var(--muted);font-size:15px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px}
+.cta{display:inline-block;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:19px;text-decoration:none;padding:14px 26px;border-radius:10px;margin:8px 0 6px}
+.cta:hover{filter:brightness(1.1)}
+.prompt{display:flex;gap:10px;align-items:center;background:var(--accent-soft);border-radius:8px;padding:10px 12px;margin-top:6px}
+.prompt code{flex:1;font:14px/1.45 ui-monospace,Menlo,Consolas,monospace}
+.prompt button{font:inherit;font-size:14px;padding:6px 14px;border-radius:6px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);cursor:pointer}
+ol.steps{margin:0 0 14px;padding-left:22px;display:grid;gap:8px}
+.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;list-style:none;margin:10px 0 0;padding:0}
+.checks li{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:15px}
+.checks strong{display:block}
+details{border-top:1px solid var(--line);padding:10px 0}
+details:last-child{padding-bottom:0}
+summary{cursor:pointer;font-weight:600}
+details p{margin:8px 0 0}
+a{color:var(--accent)}
+.crumb{max-width:820px;margin:0 auto 14px;font-size:15px}
+</style>
+</head>
+<body>
+<p class="crumb"><a href="../">&larr; All procurement prototypes</a></p>
+<main>
+  <section class="card">
+    <h1>Check your tender requirements before you go to market</h1>
+    <p>Requirement Quality Review reads your RFQ, RFT or Statement of Requirements and lists every requirement in it. It scores each one and flags the ones likely to confuse suppliers or shut out small businesses, so you can fix them before release.</p>
+    <p class="muted">Free with a Claude account (a free one works). You set it up once in about a minute, then use it whenever you like.</p>
+  </section>
+
+  <section class="card">
+    <h2>Set it up once</h2>
+    <p>Claude only runs the reviewer in your own copy, so make one the first time. It takes a minute.</p>
+    <ol class="steps">
+      <li><strong>Open the reviewer.</strong><br><a class="cta" href="https://claude.ai/artifact/FMEGmEyAp5yFkHoKka6Tdp" target="_blank" rel="noopener">Open the reviewer</a></li>
+      <li><strong>Sign in to Claude</strong> if asked. If you don't have an account, create a free one.</li>
+      <li><strong>Click the reviewer's name</strong> at the top left of the page, then choose <strong>Duplicate</strong>. Your own copy opens.</li>
+      <li><strong>Try it in your copy.</strong> Press <em>Try a short sample SOR</em>, then <em>Start review</em>, and choose <em>Allow</em> when Claude asks. A report appears in a minute or two.</li>
+    </ol>
+    <p class="muted">Next time, open your copy from your Claude artifacts. To bring in a colleague, send them this page rather than your copy's link, which only works for you.</p>
+    <details>
+      <summary>No Duplicate option?</summary>
+      <p><a href="../requirement-review.html" download="requirement-review.html">Download the reviewer file</a>, attach it in a new chat on <a href="https://claude.ai/new" target="_blank" rel="noopener">claude.ai</a>, and send: <span class="prompt"><code id="prompt">Create an HTML artifact from the attached file. Copy it exactly, character for character, without changing, shortening or summarising anything.</code><button type="button" id="copy">Copy</button></span> The bottom of the reviewer should then say "Page check: matches the original build".</p>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>Each review</h2>
+    <ol class="steps">
+      <li><strong>Add your document.</strong> Choose a PDF or Word file, or paste the text. You can add an RFQ or RFT with its SOR to catch conflicts between them.</li>
+      <li><strong>Describe the purchase.</strong> Say what you're buying, its total value including GST, and how risky it is.</li>
+      <li><strong>Start the review.</strong> The page tells you how long it will take. When it finishes, copy or download the report.</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2>What it checks</h2>
+    <ul class="checks">
+      <li><strong>Clarity</strong>Can a supplier tell exactly what to do?</li>
+      <li><strong>Consistency</strong>Do any requirements contradict each other?</li>
+      <li><strong>Duplication</strong>Is the same thing asked twice?</li>
+      <li><strong>Proportionality</strong>Is the evidence asked for justified by the value and risk?</li>
+      <li><strong>SME access</strong>Would a capable small business or new entrant be shut out?</li>
+      <li><strong>Defined terms</strong>Are acronyms and procurement terms explained?</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Questions</h2>
+    <details>
+      <summary>Does it cost anything?</summary>
+      <p>No. It runs on your own Claude account, so each review counts towards your plan's usage. A short RFQ needs a few Claude messages. A long SOR can need 20 or more, which may use up a free plan's allowance for the day. If you hit the limit, leave the page open and continue later; finished steps aren't repeated.</p>
+    </details>
+    <details>
+      <summary>What happens to my document?</summary>
+      <p>Your file is read in your browser, and its text is sent to Claude under your own account. Only review documents that are ready for release to market. Don't add anything classified above OFFICIAL.</p>
+    </details>
+    <details>
+      <summary>Can I rely on the results?</summary>
+      <p>Treat them as a second pair of eyes. Each issue says whether it came from a fixed rule check or from Claude's judgement, and quotes the requirement so you can check it against your document. The proportionality tier follows the Commonwealth Procurement Rules threshold of $80,000 and can be argued either way.</p>
+    </details>
+    <details>
+      <summary>Who made this?</summary>
+      <p>It's a prototype built on the open-source <a href="https://github.com/charles-ong/wayfinder-procurement-evaluation">Wayfinder procurement evaluation</a> project.</p>
+    </details>
+  </section>
+</main>
+<script>
+  document.getElementById("copy").onclick = async (event) => {
+    const text = document.getElementById("prompt").textContent;
+    try { await navigator.clipboard.writeText(text); event.target.textContent = "Copied"; }
+    catch { getSelection().selectAllChildren(document.getElementById("prompt")); event.target.textContent = "Press Ctrl+C to copy"; }
+  };
+</script>
+</body>
+</html>
