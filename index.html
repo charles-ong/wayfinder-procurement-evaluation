@@ -38,22 +38,23 @@ a{color:var(--accent)}
   <section class="card">
     <h1>Check your tender requirements before you go to market</h1>
     <p>Requirement Quality Review reads your RFQ, RFT or Statement of Requirements and lists every requirement in it. It scores each one and flags the ones likely to confuse suppliers or shut out small businesses, so you can fix them before release.</p>
-    <p class="muted">Free with a Claude account (a free one works). You set it up once in about two minutes, then use it whenever you like.</p>
+    <p class="muted">Free with a Claude account (a free one works). You set it up once in about a minute, then use it whenever you like.</p>
   </section>
 
   <section class="card">
     <h2>Set it up once</h2>
-    <p>Claude only runs the reviewer for the person who created it, so each buyer makes their own copy inside Claude.</p>
+    <p>Claude only runs the reviewer in your own copy, so make one the first time. It takes a minute.</p>
     <ol class="steps">
-      <li><strong>Download the reviewer file.</strong><br><a class="cta" href="requirement-review.html" download="requirement-review.html">Download the reviewer</a></li>
-      <li><strong>Open a new chat on <a href="https://claude.ai/new" target="_blank" rel="noopener">claude.ai</a></strong> and sign in. If you don't have an account, create a free one.</li>
-      <li><strong>Attach the file you downloaded and send this message:</strong>
-        <div class="prompt"><code id="prompt">Create an HTML artifact from the attached file. Copy it exactly, character for character, without changing, shortening or summarising anything.</code><button type="button" id="copy">Copy</button></div>
-      </li>
-      <li><strong>Check the copy.</strong> When the reviewer appears, scroll to the bottom. It should say <em>"Page check: matches the original build"</em>. If it doesn't, ask Claude to recreate it exactly from the file.</li>
-      <li><strong>Try it.</strong> Press <em>Try a short sample SOR</em>, then <em>Start review</em>, and choose <em>Allow</em> when Claude asks. A report appears in a minute or two.</li>
+      <li><strong>Open the reviewer.</strong><br><a class="cta" href="https://claude.ai/artifact/FMEGmEyAp5yFkHoKka6Tdp" target="_blank" rel="noopener">Open the reviewer</a></li>
+      <li><strong>Sign in to Claude</strong> if asked. If you don't have an account, create a free one.</li>
+      <li><strong>Click the reviewer's name</strong> at the top left of the page, then choose <strong>Duplicate</strong>. Your own copy opens.</li>
+      <li><strong>Try it in your copy.</strong> Press <em>Try a short sample SOR</em>, then <em>Start review</em>, and choose <em>Allow</em> when Claude asks. A report appears in a minute or two.</li>
     </ol>
-    <p class="muted">To use it again later, open that chat from your Claude chat history, or press Publish on the artifact to keep a link for yourself. A published link only works for you, so share this page with colleagues rather than your link.</p>
+    <p class="muted">Next time, open your copy from your Claude artifacts. To bring in a colleague, send them this page rather than your copy's link, which only works for you.</p>
+    <details>
+      <summary>No Duplicate option?</summary>
+      <p><a href="requirement-review.html" download="requirement-review.html">Download the reviewer file</a>, attach it in a new chat on <a href="https://claude.ai/new" target="_blank" rel="noopener">claude.ai</a>, and send: <span class="prompt"><code id="prompt">Create an HTML artifact from the attached file. Copy it exactly, character for character, without changing, shortening or summarising anything.</code><button type="button" id="copy">Copy</button></span> The bottom of the reviewer should then say "Page check: matches the original build".</p>
+    </details>
   </section>
 
   <section class="card">
@@ -81,7 +82,7 @@ a{color:var(--accent)}
     <h2>Questions</h2>
     <details>
       <summary>Does it cost anything?</summary>
-      <p>No. It runs on your own Claude account, so each review counts towards your plan's usage. A short RFQ needs a few Claude messages. A long SOR can need 20 or more, which may use up a free plan's allowance for the day. If you hit the limit, leave the page open and continue later; finished steps aren't repeated. Setting up your copy uses one Claude message.</p>
+      <p>No. It runs on your own Claude account, so each review counts towards your plan's usage. A short RFQ needs a few Claude messages. A long SOR can need 20 or more, which may use up a free plan's allowance for the day. If you hit the limit, leave the page open and continue later; finished steps aren't repeated.</p>
     </details>
     <details>
       <summary>What happens to my document?</summary>
